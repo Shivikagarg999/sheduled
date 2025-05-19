@@ -43,13 +43,11 @@ export default function Nav() {
       >
         {/* Logo */}
         <div className="flex items-center space-x-4">
-          <motion.div
-            whileHover={{ rotate: [0, -10, 10, 0] }}
-            transition={{ duration: 0.6 }}
-            className="w-12 h-10 sm:w-17 sm:p-6 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white font-bold"
-          >
-            Logo
-          </motion.div>
+          <Link href="/">
+            <div className="w-12 h-10 sm:w-17 sm:p-6 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white font-bold cursor-pointer">
+              Logo
+            </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <ul className="hidden md:flex space-x-9 text-gray-700 font-medium text-sm">
