@@ -2,21 +2,28 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Nav from '../nav/page';
-import bgimg from '../../../public/images/bg.png'
+import bgimg from '../../../public/images/bg.png';
+import { useRouter } from 'next/navigation'; 
 
 export default function SendParcel() {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const router = useRouter();
+  
   const [formData, setFormData] = useState({
     // Pickup Location Fields
     pickupBuilding: '',
     pickupApartment: '',
-    pickupEmirate: '',
+    pickupEmirate: '', 
     pickupArea: '',
     
     // Drop Location Fields
     dropBuilding: '',
     dropApartment: '',
-    dropEmirate: '',
+    dropEmirate: '', 
     dropArea: '',
     
     // Contact Fields
@@ -24,15 +31,18 @@ export default function SendParcel() {
     dropContact: '',
     
     // Delivery Options
-    deliveryType: 'delivery', // Changed default to 'delivery'
-    returnType: 'no-return', // Added return option
+    deliveryType: 'standard',
+    returnType: 'no-return',
     
     // Payment
-    paymentMethod: 'card'
+    paymentMethod: 'card',
+    amount: 0,
+    
+    // Optional field
+    notes: ''
   });
 
   const emirates = [
-    'Select Emirate',
     'Abu Dhabi',
     'Dubai',
     'Sharjah',
@@ -50,13 +60,36 @@ export default function SendParcel() {
     }));
   };
 
-  const nextStep = () => setStep(step + 1);
+  const nextStep = () => {
+    // Validate current step before proceeding
+    if (step === 1) {
+      if (!formData.pickupBuilding || !formData.pickupApartment || !formData.pickupEmirate || !formData.pickupArea ||
+          !formData.dropBuilding || !formData.dropApartment || !formData.dropEmirate || !formData.dropArea) {
+        setError('Please fill all location fields');
+        return;
+      }
+    } else if (step === 2) {
+      if (!formData.pickupContact || !formData.dropContact) {
+        setError('Please provide both contact numbers');
+        return;
+      }
+    }
+    
+    setError(null);
+    
+    // Calculate price before moving to next step
+    if (step === 3) {
+      const price = calculatePrice();
+      setFormData(prev => ({ ...prev, amount: price }));
+    }
+    setStep(step + 1);
+  };
+  
   const prevStep = () => setStep(step - 1);
 
   const calculatePrice = () => {
     let basePrice = 0;
     
-    // Base price based on delivery type
     if (formData.deliveryType === 'standard') {
       basePrice = 30;
     } else if (formData.deliveryType === 'express') {
@@ -65,7 +98,6 @@ export default function SendParcel() {
       basePrice = 20; // default for next-day
     }
     
-    // Add return fee if needed
     if (formData.returnType === 'with-return') {
       basePrice += 10;
     }
@@ -73,16 +105,69 @@ export default function SendParcel() {
     return basePrice;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    alert('Booking confirmed!');
-  };
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
+    try {
+      // Calculate final price 
+      const price = calculatePrice();
+     const orderData = {
+        pickupBuilding: formData.pickupBuilding,
+        pickupApartment: formData.pickupApartment,
+        pickupEmirate: formData.pickupEmirate,
+        pickupArea: formData.pickupArea,
+        dropBuilding: formData.dropBuilding,
+        dropApartment: formData.dropApartment,
+        dropEmirate: formData.dropEmirate,
+        dropArea: formData.dropArea,
+        pickupContact: formData.pickupContact,
+        dropContact: formData.dropContact,
+        deliveryType: formData.deliveryType,
+        returnType: formData.returnType,
+        paymentMethod: formData.paymentMethod,
+        amount: price,
+        notes: formData.notes || ''
+      };
+
+      const response = await fetch('http://localhost:5000/api/orders/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create order');
+      }
+
+      // Update state and redirect to payment page
+      setOrderDetails({
+        orderId: data.orderId,
+        trackingNumber: data.trackingNumber
+      });
+      
+      // Redirect to payment page with the order ID
+      router.push(`/payment/${data.orderId}`);
+      
+    } catch (err) {
+      console.error('Order creation error:', err);
+      setError(err.message || 'Failed to create order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <div className="min-h-screen bg-gray-50"
-     style={{ backgroundImage: `url(${bgimg.src})` }}
-    >
+    <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
+      <Head>
+        <title>Send Parcel | Delivery App</title>
+        <meta name="description" content="Send parcels across UAE" />
+      </Head>
 
       <Nav/>
 
@@ -93,7 +178,26 @@ export default function SendParcel() {
           <p className="text-gray-600">Fast and reliable delivery across UAE</p>
         </div>
 
-        {/* Progress Steps - Modern Design */}
+        {/* Success/Error Messages */}
+        {success && (
+          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {success}
+            {orderDetails && (
+              <div className="mt-2 text-sm">
+                <p>Order ID: {orderDetails.orderId}</p>
+                <p>Tracking Number: {orderDetails.trackingNumber}</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {/* Progress Steps */}
         <div className="mb-10">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -z-10"></div>
@@ -121,7 +225,7 @@ export default function SendParcel() {
                   {stepNumber === 1 && 'Locations'}
                   {stepNumber === 2 && 'Contacts'}
                   {stepNumber === 3 && 'Options'}
-                  {stepNumber === 4 && 'Payment'}
+                  {stepNumber === 4 && 'Confirm'}
                 </span>
               </div>
             ))}
@@ -191,8 +295,9 @@ export default function SendParcel() {
                           className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           required
                         >
+                          <option value="">Select Emirate</option>
                           {emirates.map((emirate, index) => (
-                            <option key={index} value={emirate} disabled={index === 0}>{emirate}</option>
+                            <option key={index} value={emirate}>{emirate}</option>
                           ))}
                         </select>
                       </div>
@@ -269,8 +374,9 @@ export default function SendParcel() {
                           className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           required
                         >
+                          <option value="">Select Emirate</option>
                           {emirates.map((emirate, index) => (
-                            <option key={index} value={emirate} disabled={index === 0}>{emirate}</option>
+                            <option key={index} value={emirate}>{emirate}</option>
                           ))}
                         </select>
                       </div>
@@ -402,52 +508,6 @@ export default function SendParcel() {
                   </h3>
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'delivery' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="delivery"
-                          checked={formData.deliveryType === 'delivery'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.deliveryType === 'delivery' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            One-way Delivery
-                          </span>
-                        </div>
-                      </div>
-                    </label>
-                    
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="return"
-                          checked={formData.deliveryType === 'return'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.deliveryType === 'return' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            Return Delivery
-                          </span>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-                
-                {/* Delivery Speed Selection */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
-                    Delivery Speed
-                  </h3>
-                  
-                  <div className="space-y-2">
                     <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'standard' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
                       <div className="flex items-start">
                         <input
@@ -458,14 +518,11 @@ export default function SendParcel() {
                           onChange={handleChange}
                           className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
                         />
-                        <div className="ml-2 flex-1">
-                          <div className="flex justify-between">
-                            <span className={`block text-sm font-medium ${formData.deliveryType === 'standard' ? 'text-blue-700' : 'text-gray-700'}`}>
-                              Standard
-                            </span>
-                            <span className="text-sm font-medium">30 AED</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Delivery within 24 hours</p>
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.deliveryType === 'standard' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            Standard (24hr)
+                          </span>
+                          <span className="block text-xs text-gray-500 mt-1">30 AED</span>
                         </div>
                       </div>
                     </label>
@@ -480,18 +537,15 @@ export default function SendParcel() {
                           onChange={handleChange}
                           className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
                         />
-                        <div className="ml-2 flex-1">
-                          <div className="flex justify-between">
-                            <span className={`block text-sm font-medium ${formData.deliveryType === 'express' ? 'text-blue-700' : 'text-gray-700'}`}>
-                              Express
-                            </span>
-                            <span className="text-sm font-medium">45 AED</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Delivery within 4 hours</p>
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.deliveryType === 'express' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            Express (4hr)
+                          </span>
+                          <span className="block text-xs text-gray-500 mt-1">45 AED</span>
                         </div>
                       </div>
                     </label>
-                    
+
                     <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'next-day' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
                       <div className="flex items-start">
                         <input
@@ -502,17 +556,139 @@ export default function SendParcel() {
                           onChange={handleChange}
                           className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
                         />
-                        <div className="ml-2 flex-1">
-                          <div className="flex justify-between">
-                            <span className={`block text-sm font-medium ${formData.deliveryType === 'next-day' ? 'text-blue-700' : 'text-gray-700'}`}>
-                              Next Day
-                            </span>
-                            <span className="text-sm font-medium">20 AED</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Delivery within 1-2 business days</p>
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.deliveryType === 'next-day' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            Next Day
+                          </span>
+                          <span className="block text-xs text-gray-500 mt-1">20 AED</span>
                         </div>
                       </div>
                     </label>
+                  </div>
+                </div>
+                
+                {/* Return Option */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
+                    Return Option
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.returnType === 'no-return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          name="returnType"
+                          value="no-return"
+                          checked={formData.returnType === 'no-return'}
+                          onChange={handleChange}
+                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                        />
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.returnType === 'no-return' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            One-way Delivery
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.returnType === 'with-return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          name="returnType"
+                          value="with-return"
+                          checked={formData.returnType === 'with-return'}
+                          onChange={handleChange}
+                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                        />
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.returnType === 'with-return' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            With Return (+10 AED)
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">3</span>
+                    Payment Method
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="card"
+                          checked={formData.paymentMethod === 'card'}
+                          onChange={handleChange}
+                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                        />
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.paymentMethod === 'card' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            Credit/Debit Card
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="cash"
+                          checked={formData.paymentMethod === 'cash'}
+                          onChange={handleChange}
+                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                        />
+                        <div className="ml-2">
+                          <span className={`block text-sm font-medium ${formData.paymentMethod === 'cash' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            Cash on Delivery
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Price Summary */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">4</span>
+                    Price Summary
+                  </h3>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Base Price:</span>
+                      <span className="font-medium">
+                        {formData.deliveryType === 'standard' && '30 AED'}
+                        {formData.deliveryType === 'express' && '45 AED'}
+                        {formData.deliveryType === 'next-day' && '20 AED'}
+                      </span>
+                    </div>
+                    
+                    {formData.returnType === 'with-return' && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Return Fee:</span>
+                        <span className="font-medium">10 AED</span>
+                      </div>
+                    )}
+                    
+                    <div className="border-t border-gray-200 mt-2 pt-2">
+                      <div className="flex justify-between font-bold">
+                        <span>Total:</span>
+                        <span className="text-blue-600">{calculatePrice()} AED</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -533,7 +709,7 @@ export default function SendParcel() {
                   onClick={nextStep}
                   className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
-                  Continue to Payment
+                  Continue to Review
                 </button>
               </div>
             </div>
@@ -542,8 +718,8 @@ export default function SendParcel() {
           {step === 4 && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Payment Details</h2>
-                <p className="text-gray-500 text-sm mt-1">Review your order and complete payment</p>
+                <h2 className="text-xl font-semibold text-gray-800">Review & Confirm</h2>
+                <p className="text-gray-500 text-sm mt-1">Review your order details</p>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -553,66 +729,49 @@ export default function SendParcel() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Service:</span>
                     <span className="font-medium">
-                      {formData.deliveryType === 'next-day' && 'Next Day Delivery'}
-                      {formData.deliveryType === 'return' && 'Return Delivery'}
                       {formData.deliveryType === 'standard' && 'Standard Delivery (24hr)'}
                       {formData.deliveryType === 'express' && 'Express Delivery (4hr)'}
+                      {formData.deliveryType === 'next-day' && 'Next Day Delivery'}
                     </span>
                   </div>
-                  {formData.deliveryType === 'return' && formData.returnType === 'with-return' && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Return Service:</span>
-                      <span className="font-medium">With Return (+10 AED)</span>
-                    </div>
-                  )}
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Return Option:</span>
+                    <span className="font-medium">
+                      {formData.returnType === 'with-return' ? 'With Return' : 'One-way'}
+                    </span>
+                  </div>
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-600">From:</span>
-                    <span className="font-medium text-right">{formData.pickupBuilding}, {formData.pickupArea}, {formData.pickupEmirate}</span>
+                    <span className="font-medium text-right">
+                      {formData.pickupBuilding}, {formData.pickupArea}, {formData.pickupEmirate}
+                    </span>
                   </div>
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-600">To:</span>
-                    <span className="font-medium text-right">{formData.dropBuilding}, {formData.dropArea}, {formData.dropEmirate}</span>
+                    <span className="font-medium text-right">
+                      {formData.dropBuilding}, {formData.dropArea}, {formData.dropEmirate}
+                    </span>
                   </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Pickup Contact:</span>
+                    <span className="font-medium">{formData.pickupContact}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Delivery Contact:</span>
+                    <span className="font-medium">{formData.dropContact}</span>
+                  </div>
+                  
                   <div className="border-t border-gray-200 mt-3 pt-3">
                     <div className="flex justify-between font-bold">
                       <span>Total:</span>
                       <span className="text-blue-600">{calculatePrice()} AED</span>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gray-700">Payment Method</h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        checked={formData.paymentMethod === 'card'}
-                        onChange={handleChange}
-                        className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                      />
-                      <span className="ml-2 block text-sm font-medium">Credit/Debit Card</span>
-                    </div>
-                  </label>
-                  
-                  <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cash"
-                        checked={formData.paymentMethod === 'cash'}
-                        onChange={handleChange}
-                        className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                      />
-                      <span className="ml-2 block text-sm font-medium">Cash on Delivery</span>
-                    </div>
-                  </label>
                 </div>
               </div>
               
@@ -629,9 +788,20 @@ export default function SendParcel() {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  disabled={loading}
+                  className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Confirm & Pay {calculatePrice()} AED
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    `Confirm Order (${calculatePrice()} AED)`
+                  )}
                 </button>
               </div>
             </div>
