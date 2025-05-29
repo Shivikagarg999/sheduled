@@ -31,7 +31,7 @@ const PaymentPage = () => {
   const handlePayment = async () => {
     try {
       setProcessingPayment(true);
-      const res = await axios.post('/api/payment', { orderId: id });
+      const res = await axios.post('http://localhost:5000/api/pay/payment', { orderId: id });
       window.location.href = res.data.redirectUrl;
     } catch (err) {
       console.error(err);

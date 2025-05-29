@@ -105,63 +105,69 @@ export default function SendParcel() {
     return basePrice;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(null);
 
-    try {
-      // Calculate final price 
-      const price = calculatePrice();
-     const orderData = {
-        pickupBuilding: formData.pickupBuilding,
-        pickupApartment: formData.pickupApartment,
-        pickupEmirate: formData.pickupEmirate,
-        pickupArea: formData.pickupArea,
-        dropBuilding: formData.dropBuilding,
-        dropApartment: formData.dropApartment,
-        dropEmirate: formData.dropEmirate,
-        dropArea: formData.dropArea,
-        pickupContact: formData.pickupContact,
-        dropContact: formData.dropContact,
-        deliveryType: formData.deliveryType,
-        returnType: formData.returnType,
-        paymentMethod: formData.paymentMethod,
-        amount: price,
-        notes: formData.notes || ''
-      };
+  try {
+    // Calculate final price 
+    const price = calculatePrice();
+    const orderData = {
+      pickupBuilding: formData.pickupBuilding,
+      pickupApartment: formData.pickupApartment,
+      pickupEmirate: formData.pickupEmirate,
+      pickupArea: formData.pickupArea,
+      dropBuilding: formData.dropBuilding,
+      dropApartment: formData.dropApartment,
+      dropEmirate: formData.dropEmirate,
+      dropArea: formData.dropArea,
+      pickupContact: formData.pickupContact,
+      dropContact: formData.dropContact,
+      deliveryType: formData.deliveryType,
+      returnType: formData.returnType,
+      paymentMethod: formData.paymentMethod,
+      amount: price,
+      notes: formData.notes || ''
+    };
 
-      const response = await fetch('http://localhost:5000/api/orders/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
+    const response = await fetch('http://localhost:5000/api/orders/create-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData)
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create order');
-      }
-
-      // Update state and redirect to payment page
-      setOrderDetails({
-        orderId: data.orderId,
-        trackingNumber: data.trackingNumber
-      });
-      
-      // Redirect to payment page with the order ID
-      router.push(`/payment/${data.orderId}`);
-      
-    } catch (err) {
-      console.error('Order creation error:', err);
-      setError(err.message || 'Failed to create order. Please try again.');
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create order');
     }
-  };
+
+    // Update state with order details
+    setOrderDetails({
+      orderId: data.orderId,
+      trackingNumber: data.trackingNumber
+    });
+    
+    // Redirect based on payment method
+    if (formData.paymentMethod === 'cash') {
+      // For cash on delivery, go directly to success page with order ID
+      router.push(`/successpay?order_id=${data.orderId}`);
+    } else {
+      // For card payments, go to payment page
+      router.push(`/payment/${data.orderId}`);
+    }
+    
+  } catch (err) {
+    console.error('Order creation error:', err);
+    setError(err.message || 'Failed to create order. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
       <Head>
