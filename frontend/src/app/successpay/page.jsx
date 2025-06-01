@@ -31,7 +31,7 @@ function SuccessContent() {
   const fetchOrderDetails = async (orderId) => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`/api/orders/order/${orderId}`);
+      const response = await axios.get(`https://sheduled-8umy.onrender.com/api/orders/order/${orderId}`);
       setTrackingNumber(response.data.trackingNumber);
     } catch (err) {
       console.error('Error fetching order details:', err);
@@ -44,7 +44,7 @@ function SuccessContent() {
   const verifyCardPayment = async (sessionId) => {
     try {
       setIsLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/pay/check-payment?session_id=${sessionId}`);
+      const res = await axios.get(`https://sheduled-8umy.onrender.com/api/pay/check-payment?session_id=${sessionId}`);
       if (res.data.paid) {
         setStatus('Payment successful!');
         if (res.data.orderId) {

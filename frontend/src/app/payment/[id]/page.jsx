@@ -15,7 +15,7 @@ const PaymentPage = () => {
   useEffect(() => {
     if (id) {
       setLoading(true);
-      axios.get(`http://localhost:5000/api/orders/order/${id}`)
+      axios.get(`https://sheduled-8umy.onrender.com/api/orders/order/${id}`)
         .then(res => {
           setOrder(res.data);
           setError(null);
@@ -31,7 +31,7 @@ const PaymentPage = () => {
   const handlePayment = async () => {
     try {
       setProcessingPayment(true);
-      const res = await axios.post('http://localhost:5000/api/pay/payment', { orderId: id });
+      const res = await axios.post('https://sheduled-8umy.onrender.com/api/pay/payment', { orderId: id });
       window.location.href = res.data.redirectUrl;
     } catch (err) {
       console.error(err);
