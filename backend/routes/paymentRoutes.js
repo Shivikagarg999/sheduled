@@ -25,8 +25,8 @@ router.post('/payment', async (req, res) => {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `http://localhost:3000/successpay?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:3000/failpay`,
+      success_url: `https://sheduled.vercel.app/successpay?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://sheduled.vercel.app/failpay`,
       metadata: {
         orderId: order._id.toString(), 
       },
