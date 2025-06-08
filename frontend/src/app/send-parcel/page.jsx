@@ -1,9 +1,9 @@
-"use client"
-import { useState } from 'react';
+'use client'
+import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import Nav from '../nav/page';
 import bgimg from '../../../public/images/bg.png';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 
 export default function SendParcel() {
   const [step, setStep] = useState(1);
@@ -13,18 +13,34 @@ export default function SendParcel() {
   const [orderDetails, setOrderDetails] = useState(null);
   const router = useRouter();
   
+  // Location state
+  const [pickupMapCenter, setPickupMapCenter] = useState({ lat: 25.2048, lng: 55.2708 }); // Dubai coordinates
+  const [dropMapCenter, setDropMapCenter] = useState({ lat: 25.2048, lng: 55.2708 });
+  const [pickupMarkerPosition, setPickupMarkerPosition] = useState(null);
+  const [dropMarkerPosition, setDropMarkerPosition] = useState(null);
+  const [pickupSearchQuery, setPickupSearchQuery] = useState('');
+  const [dropSearchQuery, setDropSearchQuery] = useState('');
+  const [pickupSearchResults, setPickupSearchResults] = useState([]);
+  const [dropSearchResults, setDropSearchResults] = useState([]);
+  const [showPickupResults, setShowPickupResults] = useState(false);
+  const [showDropResults, setShowDropResults] = useState(false);
+  
   const [formData, setFormData] = useState({
     // Pickup Location Fields
     pickupBuilding: '',
     pickupApartment: '',
     pickupEmirate: '', 
     pickupArea: '',
+    pickupLat: '',
+    pickupLng: '',
     
     // Drop Location Fields
     dropBuilding: '',
     dropApartment: '',
     dropEmirate: '', 
     dropArea: '',
+    dropLat: '',
+    dropLng: '',
     
     // Contact Fields
     pickupContact: '',
@@ -49,9 +65,140 @@ export default function SendParcel() {
     'Ajman',
     'Umm Al Quwain',
     'Ras Al Khaimah',
-    'Fujairah'
+    'Fujairah',
+    'Abu-Dhabi',
+    'Umm-Al-Quwain',
+    'Ras-Al-Khaimah'
   ];
 
+  // Search for pickup locations
+  const searchPickupLocations = async (query) => {
+    if (!query) {
+      setPickupSearchResults([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://us1.locationiq.com/v1/search.php?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&q=${encodeURIComponent(query)}&format=json&countrycodes=ae&limit=5&addressdetails=1`
+      );
+      const results = await response.json();
+      setPickupSearchResults(results);
+    } catch (err) {
+      console.error('LocationIQ search error:', err);
+      setPickupSearchResults([]);
+    }
+  };
+
+  // Search for drop locations
+  const searchDropLocations = async (query) => {
+    if (!query) {
+      setDropSearchResults([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://us1.locationiq.com/v1/search.php?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&q=${encodeURIComponent(query)}&format=json&countrycodes=ae&limit=5&addressdetails=1`
+      );
+      const results = await response.json();
+      setDropSearchResults(results);
+    } catch (err) {
+      console.error('LocationIQ search error:', err);
+      setDropSearchResults([]);
+    }
+  };
+
+  // Extract address components from location
+  const extractAddressComponents = (location) => {
+    const { address } = location;
+    if (!address) return { building: '', area: '', emirate: '' };
+
+    // Building detection
+    const building = address.house_number || 
+                    address.building || 
+                    address.amenity || 
+                    address.road || 
+                    '';
+
+    // Area detection
+    const area = address.neighbourhood ||
+                address.suburb ||
+                address.city_district ||
+                address.town ||
+                address.village ||
+                address.city ||
+                '';
+
+    // Emirate detection
+    let emirate = '';
+    const addressValues = Object.values(address);
+    for (const val of addressValues) {
+      if (emirates.includes(val)) {
+        emirate = val;
+        break;
+      }
+    }
+
+    // Special case for Dubai
+    if (!emirate && location.display_name.toLowerCase().includes('dubai')) {
+      emirate = 'Dubai';
+    }
+
+    return { building, area, emirate };
+  };
+
+  // Handle pickup location selection
+  const handlePickupLocationSelect = (location) => {
+    const { building, area, emirate } = extractAddressComponents(location);
+    
+    console.log('Selected pickup location:', {
+      display_name: location.display_name,
+      address: location.address,
+      extracted: { building, area, emirate }
+    });
+    
+    setPickupSearchQuery(location.display_name);
+    setPickupMapCenter({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
+    setPickupMarkerPosition({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
+    setShowPickupResults(false);
+    
+    setFormData(prev => ({
+      ...prev,
+      pickupBuilding: building,
+      pickupArea: area,
+      pickupEmirate: emirate,
+      pickupLat: location.lat,
+      pickupLng: location.lon
+    }));
+  };
+
+  // Handle drop location selection
+  const handleDropLocationSelect = (location) => {
+    const { building, area, emirate } = extractAddressComponents(location);
+    
+    console.log('Selected drop location:', {
+      display_name: location.display_name,
+      address: location.address,
+      extracted: { building, area, emirate }
+    });
+    
+    setDropSearchQuery(location.display_name);
+    setDropMapCenter({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
+    setDropMarkerPosition({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
+    setShowDropResults(false);
+    
+    setFormData(prev => ({
+      ...prev,
+      dropBuilding: building,
+      dropArea: area,
+      dropEmirate: emirate,
+      dropLat: location.lat,
+      dropLng: location.lon
+    }));
+  };
+
+  // Handle manual changes (for apartment numbers, etc.)
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -105,69 +252,90 @@ export default function SendParcel() {
     return basePrice;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-  try {
-    // Calculate final price 
-    const price = calculatePrice();
-    const orderData = {
-      pickupBuilding: formData.pickupBuilding,
-      pickupApartment: formData.pickupApartment,
-      pickupEmirate: formData.pickupEmirate,
-      pickupArea: formData.pickupArea,
-      dropBuilding: formData.dropBuilding,
-      dropApartment: formData.dropApartment,
-      dropEmirate: formData.dropEmirate,
-      dropArea: formData.dropArea,
-      pickupContact: formData.pickupContact,
-      dropContact: formData.dropContact,
-      deliveryType: formData.deliveryType,
-      returnType: formData.returnType,
-      paymentMethod: formData.paymentMethod,
-      amount: price,
-      notes: formData.notes || ''
-    };
+    try {
+      // Calculate final price 
+      const price = calculatePrice();
+      const orderData = {
+        pickupBuilding: formData.pickupBuilding,
+        pickupApartment: formData.pickupApartment,
+        pickupEmirate: formData.pickupEmirate,
+        pickupArea: formData.pickupArea,
+        pickupLat: formData.pickupLat,
+        pickupLng: formData.pickupLng,
+        dropBuilding: formData.dropBuilding,
+        dropApartment: formData.dropApartment,
+        dropEmirate: formData.dropEmirate,
+        dropArea: formData.dropArea,
+        dropLat: formData.dropLat,
+        dropLng: formData.dropLng,
+        pickupContact: formData.pickupContact,
+        dropContact: formData.dropContact,
+        deliveryType: formData.deliveryType,
+        returnType: formData.returnType,
+        paymentMethod: formData.paymentMethod,
+        amount: price,
+        notes: formData.notes || ''
+      };
 
-    const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(orderData)
-    });
+      const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to create order');
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create order');
+      }
+
+      // Update state with order details
+      setOrderDetails({
+        orderId: data.orderId,
+        trackingNumber: data.trackingNumber
+      });
+      
+      // Redirect based on payment method
+      if (formData.paymentMethod === 'cash') {
+        // For cash on delivery, go directly to success page with order ID
+        router.push(`/successpay?order_id=${data.orderId}`);
+      } else {
+        // For card payments, go to payment page
+        router.push(`/payment/${data.orderId}`);
+      }
+      
+    } catch (err) {
+      console.error('Order creation error:', err);
+      setError(err.message || 'Failed to create order. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  };
+  
+  const handleCont = (e) => {
+    const { name, value } = e.target;
+    // Remove non-digit characters and limit to 10 digits
+    const filtered = value.replace(/\D/g, '').slice(0, 10);
+    setFormData((prev) => ({
+      ...prev,
+      [name]: filtered,
+    }));
+  };
 
-    // Update state with order details
-    setOrderDetails({
-      orderId: data.orderId,
-      trackingNumber: data.trackingNumber
-    });
-    
-    // Redirect based on payment method
-    if (formData.paymentMethod === 'cash') {
-      // For cash on delivery, go directly to success page with order ID
-      router.push(`/successpay?order_id=${data.orderId}`);
-    } else {
-      // For card payments, go to payment page
-      router.push(`/payment/${data.orderId}`);
-    }
-    
-  } catch (err) {
-    console.error('Order creation error:', err);
-    setError(err.message || 'Failed to create order. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  // Static map URL generator for LocationIQ
+  const getStaticMapUrl = (center, marker) => {
+    if (!center) return '';
+    return `https://maps.locationiq.com/v3/staticmap?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&center=${center.lat},${center.lng}&zoom=15&size=600x300&markers=icon:small-red-cutout|${marker ? marker.lat : center.lat},${marker ? marker.lng : center.lng}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
       <Head>
@@ -244,7 +412,7 @@ const handleSubmit = async (e) => {
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">
                 <h2 className="text-xl font-semibold text-gray-800">Pickup & Delivery Locations</h2>
-                <p className="text-gray-500 text-sm mt-1">Enter addresses for pickup and delivery</p>
+                <p className="text-gray-500 text-sm mt-1">Select addresses on the map or search below</p>
               </div>
               
               <div className="space-y-6">
@@ -256,36 +424,81 @@ const handleSubmit = async (e) => {
                   </h3>
                   
                   <div className="space-y-4">
-                    <div>
-                      <label htmlFor="pickupBuilding" className="block text-sm font-medium text-gray-700 mb-1">
-                        Building/Villa and Street Name
+                    <div className="relative">
+                      <label htmlFor="pickupSearch" className="block text-sm font-medium text-gray-700 mb-1">
+                        Search for pickup location
                       </label>
                       <input
                         type="text"
-                        id="pickupBuilding"
-                        name="pickupBuilding"
-                        value={formData.pickupBuilding}
-                        onChange={handleChange}
+                        id="pickupSearch"
+                        value={pickupSearchQuery}
+                        onChange={(e) => {
+                          setPickupSearchQuery(e.target.value);
+                          searchPickupLocations(e.target.value);
+                        }}
+                        onFocus={() => setShowPickupResults(true)}
+                        onBlur={() => setTimeout(() => setShowPickupResults(false), 200)}
                         className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g. Burj Daman"
-                        required
+                        placeholder="Enter pickup address"
                       />
+                      {showPickupResults && pickupSearchResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
+                          {pickupSearchResults.map((location, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              onClick={() => handlePickupLocationSelect(location)}
+                            >
+                              <div className="font-medium">{location.display_name}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     
-                    <div>
-                      <label htmlFor="pickupApartment" className="block text-sm font-medium text-gray-700 mb-1">
-                        Apartment/Villa Number
-                      </label>
-                      <input
-                        type="text"
-                        id="pickupApartment"
-                        name="pickupApartment"
-                        value={formData.pickupApartment}
-                        onChange={handleChange}
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g. 234a"
-                        required
-                      />
+                    {/* Map for Pickup Location */}
+                    <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
+                      {pickupMapCenter && (
+                        <img
+                          src={getStaticMapUrl(pickupMapCenter, pickupMarkerPosition)}
+                          alt="Pickup location map"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="pickupBuilding" className="block text-sm font-medium text-gray-700 mb-1">
+                          Building/Villa
+                        </label>
+                        <input
+                          type="text"
+                          id="pickupBuilding"
+                          name="pickupBuilding"
+                          value={formData.pickupBuilding}
+                          onChange={handleChange}
+                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Building name"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="pickupApartment" className="block text-sm font-medium text-gray-700 mb-1">
+                          Apartment/Villa Number
+                        </label>
+                        <input
+                          type="text"
+                          id="pickupApartment"
+                          name="pickupApartment"
+                          value={formData.pickupApartment}
+                          onChange={handleChange}
+                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="e.g. 234a"
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -293,19 +506,16 @@ const handleSubmit = async (e) => {
                         <label htmlFor="pickupEmirate" className="block text-sm font-medium text-gray-700 mb-1">
                           Emirate
                         </label>
-                        <select
+                        <input
+                          type="text"
                           id="pickupEmirate"
                           name="pickupEmirate"
                           value={formData.pickupEmirate}
                           onChange={handleChange}
                           className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Select emirate"
                           required
-                        >
-                          <option value="">Select Emirate</option>
-                          {emirates.map((emirate, index) => (
-                            <option key={index} value={emirate}>{emirate}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                       
                       <div>
@@ -319,7 +529,7 @@ const handleSubmit = async (e) => {
                           value={formData.pickupArea}
                           onChange={handleChange}
                           className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g. Downtown Dubai"
+                          placeholder="Enter area"
                           required
                         />
                       </div>
@@ -335,36 +545,81 @@ const handleSubmit = async (e) => {
                   </h3>
                   
                   <div className="space-y-4">
-                    <div>
-                      <label htmlFor="dropBuilding" className="block text-sm font-medium text-gray-700 mb-1">
-                        Building/Villa and Street Name
+                    <div className="relative">
+                      <label htmlFor="dropSearch" className="block text-sm font-medium text-gray-700 mb-1">
+                        Search for delivery location
                       </label>
                       <input
                         type="text"
-                        id="dropBuilding"
-                        name="dropBuilding"
-                        value={formData.dropBuilding}
-                        onChange={handleChange}
+                        id="dropSearch"
+                        value={dropSearchQuery}
+                        onChange={(e) => {
+                          setDropSearchQuery(e.target.value);
+                          searchDropLocations(e.target.value);
+                        }}
+                        onFocus={() => setShowDropResults(true)}
+                        onBlur={() => setTimeout(() => setShowDropResults(false), 200)}
                         className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g. Marina Plaza"
-                        required
+                        placeholder="Enter delivery address"
                       />
+                      {showDropResults && dropSearchResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
+                          {dropSearchResults.map((location, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              onClick={() => handleDropLocationSelect(location)}
+                            >
+                              <div className="font-medium">{location.display_name}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     
-                    <div>
-                      <label htmlFor="dropApartment" className="block text-sm font-medium text-gray-700 mb-1">
-                        Apartment/Villa Number
-                      </label>
-                      <input
-                        type="text"
-                        id="dropApartment"
-                        name="dropApartment"
-                        value={formData.dropApartment}
-                        onChange={handleChange}
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g. 101b"
-                        required
-                      />
+                    {/* Map for Drop Location */}
+                    <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
+                      {dropMapCenter && (
+                        <img
+                          src={getStaticMapUrl(dropMapCenter, dropMarkerPosition)}
+                          alt="Drop location map"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="dropBuilding" className="block text-sm font-medium text-gray-700 mb-1">
+                          Building/Villa
+                        </label>
+                        <input
+                          type="text"
+                          id="dropBuilding"
+                          name="dropBuilding"
+                          value={formData.dropBuilding}
+                          onChange={handleChange}
+                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Building name"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="dropApartment" className="block text-sm font-medium text-gray-700 mb-1">
+                          Apartment/Villa Number
+                        </label>
+                        <input
+                          type="text"
+                          id="dropApartment"
+                          name="dropApartment"
+                          value={formData.dropApartment}
+                          onChange={handleChange}
+                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="e.g. 101b"
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -372,19 +627,16 @@ const handleSubmit = async (e) => {
                         <label htmlFor="dropEmirate" className="block text-sm font-medium text-gray-700 mb-1">
                           Emirate
                         </label>
-                        <select
+                        <input
+                          type="text"
                           id="dropEmirate"
                           name="dropEmirate"
                           value={formData.dropEmirate}
                           onChange={handleChange}
                           className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Select emirate"
                           required
-                        >
-                          <option value="">Select Emirate</option>
-                          {emirates.map((emirate, index) => (
-                            <option key={index} value={emirate}>{emirate}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                       
                       <div>
@@ -398,7 +650,7 @@ const handleSubmit = async (e) => {
                           value={formData.dropArea}
                           onChange={handleChange}
                           className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g. Dubai Marina"
+                          placeholder="Enter area"
                           required
                         />
                       </div>
@@ -436,11 +688,14 @@ const handleSubmit = async (e) => {
                     <input
                       type="tel"
                       id="pickupContact"
+                      inputMode="numeric"  
+                      pattern="\d{1,10}"        
+                      maxLength={10}     
                       name="pickupContact"
                       value={formData.pickupContact}
-                      onChange={handleChange}
+                      onChange={handleCont}
                       className="block w-full border border-gray-300 rounded-md py-2 px-3 pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g. +971 50 123 4567"
+                      placeholder="Enter contact"
                       required
                     />
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -462,9 +717,12 @@ const handleSubmit = async (e) => {
                       id="dropContact"
                       name="dropContact"
                       value={formData.dropContact}
-                      onChange={handleChange}
+                      onChange={handleCont}
+                      inputMode="numeric"  
+                      pattern="\d{1,10}"        
+                      maxLength={10}  
                       className="block w-full border border-gray-300 rounded-md py-2 px-3 pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g. +971 50 123 4567"
+                      placeholder="Enter contact"
                       required
                     />
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -645,7 +903,7 @@ const handleSubmit = async (e) => {
                       </div>
                     </label>
                     
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                    {/* <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
                       <div className="flex items-start">
                         <input
                           type="radio"
@@ -661,7 +919,7 @@ const handleSubmit = async (e) => {
                           </span>
                         </div>
                       </div>
-                    </label>
+                    </label> */}
                   </div>
                 </div>
 

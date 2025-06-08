@@ -61,12 +61,27 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
-// Generate a tracking number if not present
-orderSchema.pre('save', function(next) {
-  if (!this.trackingNumber) {
-    this.trackingNumber = 'TRK' + Math.random().toString(36).substr(2, 9).toUpperCase();
+orderSchema.pre('save', async function (next) {
+  if (this.trackingNumber) return next();
+
+  try {
+    const lastOrder = await this.constructor.findOne({ trackingNumber: { $regex: /^AE\d{3,}$/ } })
+      .sort({ trackingNumber: -1 }) 
+      .lean();
+
+    let lastNumber = 0;
+
+    if (lastOrder && lastOrder.trackingNumber) {
+      lastNumber = parseInt(lastOrder.trackingNumber.slice(2)) || 0;
+    }
+
+    const newNumber = lastNumber + 1;
+    this.trackingNumber = `AE${newNumber.toString().padStart(3, '0')}`;
+
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 });
 
 const Order = mongoose.model('Order', orderSchema);
