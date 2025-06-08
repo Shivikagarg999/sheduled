@@ -79,7 +79,7 @@ export default function Nav() {
               </motion.li>
             </Link>
 
-           <Link href="/track">
+           <Link href="/track" target='_blank'>
             <motion.li
               whileHover={{ scale: 1.05 }}
               className="cursor-pointer hover:text-blue-600 transition-colors relative group"

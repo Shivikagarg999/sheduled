@@ -1,13 +1,13 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import bgimg from "../../../public/images/bg.png";
+// import Nav from '../nav/page';
 
 export default function EnterTrackingPage() {
   const [trackingId, setTrackingId] = useState('');
   const router = useRouter();
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (trackingId.trim()) {
@@ -37,6 +37,7 @@ export default function EnterTrackingPage() {
       className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-no-repeat bg-cover flex items-center justify-center"
       style={{ backgroundImage: `url(${bgimg.src})` }}
     >
+        {/* <Nav/> */}
       <motion.div 
         initial="hidden"
         animate="visible"
