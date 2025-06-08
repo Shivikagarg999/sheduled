@@ -439,7 +439,7 @@ export default function SendParcel() {
                         onFocus={() => setShowPickupResults(true)}
                         onBlur={() => setTimeout(() => setShowPickupResults(false), 200)}
                         className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter pickup address"
+                        placeholder="Search pickup address"
                       />
                       {showPickupResults && pickupSearchResults.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
@@ -560,7 +560,7 @@ export default function SendParcel() {
                         onFocus={() => setShowDropResults(true)}
                         onBlur={() => setTimeout(() => setShowDropResults(false), 200)}
                         className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter delivery address"
+                        placeholder="Search delivery address"
                       />
                       {showDropResults && dropSearchResults.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
