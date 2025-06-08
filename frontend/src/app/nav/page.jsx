@@ -79,6 +79,7 @@ export default function Nav() {
               </motion.li>
             </Link>
 
+           <Link href="/track">
             <motion.li
               whileHover={{ scale: 1.05 }}
               className="cursor-pointer hover:text-blue-600 transition-colors relative group"
@@ -89,6 +90,7 @@ export default function Nav() {
                 layoutId="underline"
               />
             </motion.li>
+           </Link>
           </ul>
         </div>
 
@@ -171,12 +173,14 @@ export default function Nav() {
                 </motion.li>
               </Link>
 
-              <motion.li
+            <Link href='/track'>
+               <motion.li
                 whileHover={{ scale: 1.02 }}
                 className="cursor-pointer hover:text-blue-600 transition-colors py-2"
               >
                 Track Order
               </motion.li>
+            </Link>
 
               <div className="pt-4 border-t border-gray-200 mt-2">
                 <motion.div

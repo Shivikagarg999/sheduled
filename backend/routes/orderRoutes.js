@@ -61,8 +61,6 @@ router.post('/create-order', async (req, res) => {
   }
 });
 
-
-
 router.get('/order/:id', async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -78,4 +76,18 @@ router.get('/order/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+//Track order
+router.get('/track/:trackingNumber', async (req, res) => {
+  try {
+    const order = await Order.findOne({ trackingNumber: req.params.trackingNumber });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
