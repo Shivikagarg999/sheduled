@@ -8,7 +8,7 @@ const paymentRoutes=require('./routes/paymentRoutes')
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://sheduled.com'],
+  origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com'],
   credentials: true
 }));
 
