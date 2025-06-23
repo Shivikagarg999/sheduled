@@ -210,7 +210,7 @@ export default function Main() {
             variants={fadeIn}
             className="text-sm text-blue-600 font-semibold tracking-wide uppercase"
           >
-            Lorem ipsum dolor sit amet, consectetur
+            Built to Simplify Your Shipping
           </motion.p>
 
           {/* Main headline */}
@@ -218,9 +218,7 @@ export default function Main() {
             variants={fadeIn}
             className="text-4xl md:text-5xl text-black mt-2 mb-4"
           >
-            YOUR EVERYDAY DELIVERY <br />
-            PARTNER-
-            <span className="text-black font-extrabold">FAST, EASY, RELIABLE</span>
+           No Warehouses. No Dark Stores. No Last Mile Headaches. Just True End-to-End Delivery.
           </motion.h1>
 
           {/* Description */}
@@ -228,9 +226,7 @@ export default function Main() {
             variants={fadeIn}
             className="text-gray-500 max-w-2xl mx-auto mb-8 text-sm md:text-base"
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed facilisis eleifend quam, non
-            efficitur nisi mattis quis. Vivamus scelerisque orci nec erat cursus, sed facilisis velit
-            porttitor.
+           We’re redefining delivery by eliminating the clutter — no warehouses, no dark stores, no last-mile chaos. Our end-to-end platform connects businesses directly to customers, replacing outdated logistics with a smarter, faster, and more efficient 24 hrs delivery.
           </motion.p>
 
        <motion.div 

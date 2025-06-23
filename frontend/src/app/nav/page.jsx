@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FaGlobe, FaChevronDown, FaBars, FaTimes } from 'react-icons/fa';
+import Image from 'next/image';
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -42,11 +43,15 @@ export default function Nav() {
         } border-2 px-4 sm:px-6 flex justify-between items-center backdrop-blur-sm bg-opacity-90`}
       >
         {/* Logo */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 mr-4">
           <Link href="/">
-            <div className="w-12 h-10 sm:w-17 sm:p-6 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white font-bold cursor-pointer">
-              Logo
-            </div>
+            <Image
+  src="/images/logo.png"
+  alt="Logo"
+  width={150}
+  height={10}
+  className="object-contain cursor-pointer"
+/>
           </Link>
 
           {/* Desktop Navigation */}
