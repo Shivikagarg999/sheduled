@@ -6,85 +6,142 @@ const jwt = require('jsonwebtoken');
 
 router.post('/register', async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      phone,
-      googleId,
-      gender,
-      address
-    } = req.body;
+    const { name, email, phone, password, googleId } = req.body;
 
-    const isGoogleRegister = !!email; // Google registration uses email
-    const isDirectRegister = !!phone; // Direct registration uses phone
+    const isGoogleRegister = !!(googleId && email);
+    const isDirectRegister = !!(phone && password);
 
-    if (!name) {
-      return res.status(400).json({ message: "Name is required" });
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required.' });
     }
 
-    // Google Registration: email required
-    if (isGoogleRegister && !googleId) {
-      return res.status(400).json({ message: "Google ID is required for Google registration" });
-    }
-
-    // Direct Registration: phone required
     if (!isGoogleRegister && !isDirectRegister) {
-      return res.status(400).json({ message: "Phone number is required for direct registration" });
+      return res.status(400).json({ message: 'Provide either phone & password OR googleId.' });
     }
 
-    // Check for existing users by email or phone
-    const existingUser = await User.findOne({
-      $or: [
-        ...(email ? [{ email }] : []),
-        ...(phone ? [{ phone }] : [])
-      ]
-    });
+    if (isGoogleRegister && isDirectRegister) {
+      return res.status(400).json({ message: 'Use only one method to register.' });
+    }
+
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       if (isGoogleRegister && !existingUser.googleId) {
-        return res.status(400).json({ message: "Already registered via phone. Please login with phone." });
+        return res.status(400).json({ message: 'Already registered via phone. Please login with phone.' });
       }
 
       if (isDirectRegister && existingUser.googleId) {
-        return res.status(400).json({ message: "Already registered via Google. Please login with Google." });
+        return res.status(400).json({ message: 'Already registered via Google. Please login with Google.' });
       }
 
-      return res.status(400).json({ message: "User already exists." });
+      return res.status(400).json({ message: 'User already exists.' });
     }
 
-    const userData = {
+    let hashedPassword = null;
+    if (isDirectRegister) {
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(password, salt);
+    }
+
+    const user = await User.create({
       name,
-      email: email || null,
-      phone: phone || null,
-      googleId: googleId || null,
-      address
-    };
+      email,
+      phone: isDirectRegister ? phone : null,
+      password: hashedPassword,
+      googleId: isGoogleRegister ? googleId : null,
+    });
 
-    const user = await User.create(userData);
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: 'User registered successfully',
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
         authMethod: isGoogleRegister ? 'google' : 'direct'
       }
     });
-
   } catch (err) {
     console.error('Register Error:', err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-module.exports=router
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user || !user.password) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      }
+    });
+  } catch (err) {
+    console.error('Login Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/google-login', async (req, res) => {
+  try {
+    const { email, googleId, name } = req.body;
+
+    if (!email || !googleId || !name) {
+      return res.status(400).json({ message: 'Missing Google credentials' });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      if (!user.googleId) {
+        return res.status(400).json({ message: 'User exists via direct signup. Use password to login.' });
+      }
+    } else {
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        phone: null,
+        password: null
+      });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.status(200).json({
+      message: 'Google login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        method: 'google'
+      }
+    });
+  } catch (err) {
+    console.error('Google Login Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+module.exports = router;

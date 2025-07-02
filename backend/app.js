@@ -3,7 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const orderRoutes = require('./routes/orderRoutes');
-const paymentRoutes=require('./routes/paymentRoutes')
+const paymentRoutes=require('./routes/paymentRoutes');
+const userRoutes= require('./routes/userRoutes')
 
 const app = express();
 
@@ -27,7 +28,8 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/orders', orderRoutes);
-app.use('/api/pay', paymentRoutes )
+app.use('/api/pay', paymentRoutes );
+app.use('/api/user', userRoutes );
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
