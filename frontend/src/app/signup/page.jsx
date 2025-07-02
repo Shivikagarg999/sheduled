@@ -20,7 +20,7 @@ export default function Signup() {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/user/register', {
+      const res = await fetch('https://sheduled-8umy.onrender.com/api/user/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -47,7 +47,7 @@ export default function Signup() {
           { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
         );
 
-        const res = await fetch('http://localhost:5000/api/user/google-login', {
+        const res = await fetch('https://sheduled-8umy.onrender.com/api/user/google-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
