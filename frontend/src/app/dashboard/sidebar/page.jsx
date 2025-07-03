@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiHome, 
@@ -13,7 +13,8 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiMenu,
-  FiX
+  FiX,
+  FiLogOut
 } from 'react-icons/fi';
 import Logo from '../../../assets/Logo.png'
 import Image from 'next/image';
@@ -21,12 +22,13 @@ import Image from 'next/image';
 
 const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen }) => {
   const pathname = usePathname();
+  const router = useRouter();
 
   const menuItems = [
-    { name: 'Dashboard', path: '/user/dashboard', icon: <FiHome /> },
-    { name: 'Send Parcel', path: '/user/orders', icon: <FiPackage /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <FiHome /> },
+    { name: 'Send Parcel', path: '/send-parcel', icon: <FiPackage /> },
     { name: 'My Orders', path: '/user/orders', icon: <FiPackage /> },
-    { name: 'Track Parcel', path: '/user/track', icon: <FiMap /> },
+    { name: 'Track Parcel', path: '/track', icon: <FiMap /> },
     { name: 'Order History', path: '/user/history', icon: <FiClock /> },
     { name: 'Profile', path: '/user/profile', icon: <FiUser /> },
     { name: 'Support', path: '/user/support', icon: <FiHelpCircle /> },
@@ -56,6 +58,13 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
     })
   };
 
+  const handleLogout = () => {
+    // Remove token from localStorage
+    localStorage.removeItem('token');
+    // Redirect to login page
+    router.push('/login');
+  };
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -65,29 +74,29 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
         transition={{ type: "spring", damping: 20 }}
         className={`hidden md:flex flex-col h-screen bg-white text-gray-800 border-r border-gray-200 fixed z-20 shadow-sm`}
       >
-       <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
-  {!collapsed && (
-    <Image
-      src={Logo}
-      alt="User Panel Logo"
-      width={240}      
-      height={100}
-      className="object-contain"
-      priority
-    />
-  )}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
+          {!collapsed && (
+            <Image
+              src={Logo}
+              alt="User Panel Logo"
+              width={240}      
+              height={100}
+              className="object-contain"
+              priority
+            />
+          )}
 
-  <button 
-    onClick={() => setCollapsed(!collapsed)}
-    className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
-  >
-    {collapsed ? (
-      <FiChevronRight className="h-5 w-5" />
-    ) : (
-      <FiChevronLeft className="h-5 w-5" />
-    )}
-  </button>
-</div>
+          <button 
+            onClick={() => setCollapsed(!collapsed)}
+            className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+          >
+            {collapsed ? (
+              <FiChevronRight className="h-5 w-5" />
+            ) : (
+              <FiChevronLeft className="h-5 w-5" />
+            )}
+          </button>
+        </div>
 
         {/* Menu Items */}
         <motion.div 
@@ -128,6 +137,30 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
                 </Link>
               </motion.li>
             ))}
+            
+            {/* Logout Button */}
+            <motion.li 
+              custom={menuItems.length}
+              variants={itemVariants}
+            >
+              <button
+                onClick={handleLogout}
+                className={`flex items-center w-full px-4 py-3 text-sm font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900`}
+              >
+                <span className={`${collapsed ? 'mx-auto' : 'mr-3'} text-lg text-gray-500`}>
+                  <FiLogOut />
+                </span>
+                {!collapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    Logout
+                  </motion.span>
+                )}
+              </button>
+            </motion.li>
           </ul>
         </motion.div>
 
@@ -206,6 +239,25 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
                       </Link>
                     </motion.li>
                   ))}
+                  
+                  {/* Mobile Logout Button */}
+                  <motion.li 
+                    custom={menuItems.length}
+                    variants={itemVariants}
+                  >
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center w-full px-4 py-3 text-sm font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    >
+                      <span className="mr-3 text-lg">
+                        <FiLogOut />
+                      </span>
+                      <span>Logout</span>
+                    </button>
+                  </motion.li>
                 </ul>
               </motion.div>
 

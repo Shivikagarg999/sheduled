@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Order= require('../models/order')
 
 router.post('/register', async (req, res) => {
   try {
@@ -143,5 +144,14 @@ router.post('/google-login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+// All Orders for a user
+router.get('/allOrders/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user orders' });
+  }
+});
 module.exports = router;

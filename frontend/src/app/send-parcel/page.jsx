@@ -4,6 +4,9 @@ import Head from 'next/head';
 import Nav from '../nav/page';
 import bgimg from '../../../public/images/bg.png';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic'
+
+const MapView = dynamic(() => import('../components/MapView'), { ssr: false })
 
 export default function SendParcel() {
   const [step, setStep] = useState(1);
@@ -91,23 +94,17 @@ export default function SendParcel() {
   };
 
   // Search for drop locations
-  const searchDropLocations = async (query) => {
-    if (!query) {
-      setDropSearchResults([]);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `https://us1.locationiq.com/v1/search.php?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&q=${encodeURIComponent(query)}&format=json&countrycodes=ae&limit=5&addressdetails=1`
-      );
-      const results = await response.json();
-      setDropSearchResults(results);
-    } catch (err) {
-      console.error('LocationIQ search error:', err);
-      setDropSearchResults([]);
-    }
-  };
+ const searchDropLocations = async (query) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=ae`
+    );
+    const data = await res.json();
+    setDropSearchResults(data);
+  } catch (error) {
+    console.error('Nominatim location search failed:', error);
+  }
+};
 
   // Extract address components from location
   const extractAddressComponents = (location) => {
@@ -409,266 +406,246 @@ export default function SendParcel() {
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {step === 1 && (
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Pickup & Delivery Locations</h2>
-                <p className="text-gray-500 text-sm mt-1">Select addresses on the map or search below</p>
-              </div>
-              
-              <div className="space-y-6">
-                {/* Pickup Location Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
-                    Pickup Location
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <label htmlFor="pickupSearch" className="block text-sm font-medium text-gray-700 mb-1">
-                        Search for pickup location
-                      </label>
-                      <input
-                        type="text"
-                        id="pickupSearch"
-                        value={pickupSearchQuery}
-                        onChange={(e) => {
-                          setPickupSearchQuery(e.target.value);
-                          searchPickupLocations(e.target.value);
-                        }}
-                        onFocus={() => setShowPickupResults(true)}
-                        onBlur={() => setTimeout(() => setShowPickupResults(false), 200)}
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Search pickup address"
-                      />
-                      {showPickupResults && pickupSearchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
-                          {pickupSearchResults.map((location, index) => (
-                            <div
-                              key={index}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handlePickupLocationSelect(location)}
-                            >
-                              <div className="font-medium">{location.display_name}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Map for Pickup Location */}
-                    <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
-                      {pickupMapCenter && (
-                        <img
-                          src={getStaticMapUrl(pickupMapCenter, pickupMarkerPosition)}
-                          alt="Pickup location map"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="pickupBuilding" className="block text-sm font-medium text-gray-700 mb-1">
-                          Building/Villa
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupBuilding"
-                          name="pickupBuilding"
-                          value={formData.pickupBuilding}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Building name"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="pickupApartment" className="block text-sm font-medium text-gray-700 mb-1">
-                          Apartment/Villa Number
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupApartment"
-                          name="pickupApartment"
-                          value={formData.pickupApartment}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g. 234a"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="pickupEmirate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Emirate
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupEmirate"
-                          name="pickupEmirate"
-                          value={formData.pickupEmirate}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Select emirate"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="pickupArea" className="block text-sm font-medium text-gray-700 mb-1">
-                          Area
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupArea"
-                          name="pickupArea"
-                          value={formData.pickupArea}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter area"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Delivery Location Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
-                    Delivery Location
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <label htmlFor="dropSearch" className="block text-sm font-medium text-gray-700 mb-1">
-                        Search for delivery location
-                      </label>
-                      <input
-                        type="text"
-                        id="dropSearch"
-                        value={dropSearchQuery}
-                        onChange={(e) => {
-                          setDropSearchQuery(e.target.value);
-                          searchDropLocations(e.target.value);
-                        }}
-                        onFocus={() => setShowDropResults(true)}
-                        onBlur={() => setTimeout(() => setShowDropResults(false), 200)}
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Search delivery address"
-                      />
-                      {showDropResults && dropSearchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
-                          {dropSearchResults.map((location, index) => (
-                            <div
-                              key={index}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handleDropLocationSelect(location)}
-                            >
-                              <div className="font-medium">{location.display_name}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Map for Drop Location */}
-                    <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
-                      {dropMapCenter && (
-                        <img
-                          src={getStaticMapUrl(dropMapCenter, dropMarkerPosition)}
-                          alt="Drop location map"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="dropBuilding" className="block text-sm font-medium text-gray-700 mb-1">
-                          Building/Villa
-                        </label>
-                        <input
-                          type="text"
-                          id="dropBuilding"
-                          name="dropBuilding"
-                          value={formData.dropBuilding}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Building name"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="dropApartment" className="block text-sm font-medium text-gray-700 mb-1">
-                          Apartment/Villa Number
-                        </label>
-                        <input
-                          type="text"
-                          id="dropApartment"
-                          name="dropApartment"
-                          value={formData.dropApartment}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g. 101b"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="dropEmirate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Emirate
-                        </label>
-                        <input
-                          type="text"
-                          id="dropEmirate"
-                          name="dropEmirate"
-                          value={formData.dropEmirate}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Select emirate"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="dropArea" className="block text-sm font-medium text-gray-700 mb-1">
-                          Area
-                        </label>
-                        <input
-                          type="text"
-                          id="dropArea"
-                          name="dropArea"
-                          value={formData.dropArea}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter area"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        <div className="p-6 md:p-8 space-y-6">
+  <div className="border-b border-gray-200 pb-4">
+    <h2 className="text-xl font-semibold text-gray-800">Pickup & Delivery Locations</h2>
+    <p className="text-gray-500 text-sm mt-1">Select addresses on the map or search below</p>
+  </div>
+
+  <div className="space-y-6">
+    {/* Pickup Section */}
+    <div className="bg-gray-50 p-4 rounded-lg">
+      <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
+        Pickup Location
+      </h3>
+
+      <div className="space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <label htmlFor="pickupSearch" className="block text-sm font-medium text-gray-700 mb-1">
+            Search for pickup location
+          </label>
+          <input
+            type="text"
+            id="pickupSearch"
+            value={pickupSearchQuery}
+            onChange={(e) => {
+              setPickupSearchQuery(e.target.value)
+              searchPickupLocations(e.target.value)
+            }}
+            onFocus={() => setShowPickupResults(true)}
+            onBlur={() => setTimeout(() => setShowPickupResults(false), 200)}
+            className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Search pickup address"
+          />
+          {showPickupResults && pickupSearchResults.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
+              {pickupSearchResults.map((location, index) => (
+                <div
+                  key={index}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handlePickupLocationSelect(location)}
                 >
-                  Continue to Contacts
-                </button>
-              </div>
+                  <div className="font-medium">{location.display_name}</div>
+                </div>
+              ))}
             </div>
+          )}
+        </div>
+
+        {/* Map */}
+        <MapView
+          center={pickupMapCenter}
+          markerPosition={pickupMarkerPosition}
+          setMarkerPosition={setPickupMarkerPosition}
+          setLatLng={(lat, lng) =>
+            setFormData((prev) => ({ ...prev, pickupLat: lat, pickupLng: lng }))
+          }
+        />
+
+        {/* Building/Apartment/Emirate/Area */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="pickupBuilding" className="block text-sm font-medium text-gray-700 mb-1">Building/Villa</label>
+            <input
+              type="text"
+              id="pickupBuilding"
+              name="pickupBuilding"
+              value={formData.pickupBuilding}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="Building name"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="pickupApartment" className="block text-sm font-medium text-gray-700 mb-1">Apartment/Villa Number</label>
+            <input
+              type="text"
+              id="pickupApartment"
+              name="pickupApartment"
+              value={formData.pickupApartment}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="e.g. 234a"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="pickupEmirate" className="block text-sm font-medium text-gray-700 mb-1">Emirate</label>
+            <input
+              type="text"
+              id="pickupEmirate"
+              name="pickupEmirate"
+              value={formData.pickupEmirate}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="Select emirate"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="pickupArea" className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+            <input
+              type="text"
+              id="pickupArea"
+              name="pickupArea"
+              value={formData.pickupArea}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="Enter area"
+              required
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Drop Section */}
+    <div className="bg-gray-50 p-4 rounded-lg">
+      <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
+        Delivery Location
+      </h3>
+
+      <div className="space-y-4">
+        <div className="relative">
+          <label htmlFor="dropSearch" className="block text-sm font-medium text-gray-700 mb-1">
+            Search for delivery location
+          </label>
+          <input
+            type="text"
+            id="dropSearch"
+            value={dropSearchQuery}
+            onChange={(e) => {
+              setDropSearchQuery(e.target.value)
+              searchDropLocations(e.target.value)
+            }}
+            onFocus={() => setShowDropResults(true)}
+            onBlur={() => setTimeout(() => setShowDropResults(false), 200)}
+            className="block w-full border border-gray-300 rounded-md py-2 px-3"
+            placeholder="Search delivery address"
+          />
+          {showDropResults && dropSearchResults.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
+              {dropSearchResults.map((location, index) => (
+                <div
+                  key={index}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleDropLocationSelect(location)}
+                >
+                  <div className="font-medium">{location.display_name}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Map */}
+        <MapView
+          center={dropMapCenter}
+          markerPosition={dropMarkerPosition}
+          setMarkerPosition={setDropMarkerPosition}
+          setLatLng={(lat, lng) =>
+            setFormData((prev) => ({ ...prev, dropLat: lat, dropLng: lng }))
+          }
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="dropBuilding" className="block text-sm font-medium text-gray-700 mb-1">Building/Villa</label>
+            <input
+              type="text"
+              id="dropBuilding"
+              name="dropBuilding"
+              value={formData.dropBuilding}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="Building name"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="dropApartment" className="block text-sm font-medium text-gray-700 mb-1">Apartment/Villa Number</label>
+            <input
+              type="text"
+              id="dropApartment"
+              name="dropApartment"
+              value={formData.dropApartment}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="e.g. 101b"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="dropEmirate" className="block text-sm font-medium text-gray-700 mb-1">Emirate</label>
+            <input
+              type="text"
+              id="dropEmirate"
+              name="dropEmirate"
+              value={formData.dropEmirate}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="Select emirate"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="dropArea" className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+            <input
+              type="text"
+              id="dropArea"
+              name="dropArea"
+              value={formData.dropArea}
+              onChange={handleChange}
+              className="block w-full border border-gray-300 rounded-md py-2 px-3"
+              placeholder="Enter area"
+              required
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="pt-2">
+    <button
+      type="button"
+      onClick={nextStep}
+      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+    >
+      Continue to Contacts
+    </button>
+  </div>
+</div>
           )}
 
           {step === 2 && (

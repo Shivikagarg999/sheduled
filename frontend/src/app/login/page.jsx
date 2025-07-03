@@ -17,74 +17,92 @@ export default function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+ const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await fetch('https://sheduled-8umy.onrender.com/api/user/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      console.log('Login successful:', data);
+
+      // ✅ Store token and userId
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userId', data.user.id);
+
+      router.push('/dashboard');
+    } else {
+      alert(data.message || 'Login failed');
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    alert('Something went wrong');
+  }
+};
+
+const handleGoogleLogin = useGoogleLogin({
+  onSuccess: async (tokenResponse) => {
     try {
-      const res = await fetch('https://sheduled-8umy.onrender.com/api/user/login', {
+      // Step 1: Fetch user info from Google
+      const userInfo = await axios.get(
+        'https://www.googleapis.com/oauth2/v3/userinfo',
+        {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+        }
+      );
+
+      console.log("Google User Info:", userInfo.data);
+
+      // Step 2: Extract user data
+      const name =
+        userInfo.data.name ||
+        `${userInfo.data.given_name || ''} ${userInfo.data.family_name || ''}`.trim();
+
+      // Step 3: Send user to your backend
+      const res = await fetch('http://localhost:5000/api/user/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name,
+          email: userInfo.data.email,
+          googleId: userInfo.data.sub,
+        }),
       });
 
       const data = await res.json();
+
+      // Step 4: Handle response
       if (res.ok) {
-        // Store token and user data as needed
-        console.log('Login successful:', data);
-        router.push('/dashboard'); // Redirect to dashboard or home page
+        console.log('Google login successful:', data);
+
+        // ✅ Store token and user ID
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userId', data.user.id);
+
+        // Optional: store more info
+        localStorage.setItem('userName', data.user.name);
+
+        // Step 5: Redirect
+        router.push('/dashboard');
       } else {
-        alert(data.message || 'Login failed');
+        alert(data.message || 'Google login failed');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      alert('Something went wrong');
-    }
-  };
-
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-     const userInfo = await axios.get(
-  'https://www.googleapis.com/oauth2/v3/userinfo',
-  {
-    headers: {
-      Authorization: `Bearer ${tokenResponse.access_token}`,
-    },
-  }
-);
-
-console.log("Google User Info:", userInfo.data);
-
-const name =
-  userInfo.data.name ||
-  `${userInfo.data.given_name || ''} ${userInfo.data.family_name || ''}`.trim();
-
-const res = await fetch('https://sheduled-8umy.onrender.com/api/user/google-login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    name,
-    email: userInfo.data.email,
-    googleId: userInfo.data.sub,
-  }),
-});
-
-        const data = await res.json();
-        if (res.ok) {
-          console.log('Google login successful:', data);
-          router.push('/dashboard'); // Redirect to dashboard or home page
-        } else {
-          alert(data.message || 'Google login failed');
-        }
-      } catch (err) {
-        console.error('Google login error:', err);
-        alert('Google login failed');
-      }
-    },
-    onError: (error) => {
-      console.error('Google Login Error:', error);
+      console.error('Google login error:', err);
       alert('Google login failed');
     }
-  });
+  },
+  onError: (error) => {
+    console.error('Google Login Error:', error);
+    alert('Google login failed');
+  }
+});
 
   return (
     <>
