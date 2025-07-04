@@ -12,7 +12,7 @@ app.use(cors({
   origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com'],
   credentials: true
 }));
-
+app.options('*', cors());
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI, {
