@@ -21,7 +21,7 @@ const OrdersPage = () => {
       }
 
       try {
-        const res = await axios.get(`http://localhost:5000/api/user/allOrders/${userId}`);
+        const res = await axios.get(`https://sheduled-8umy.onrender.com/api/user/allOrders/${userId}`);
         setOrders(res.data);
       } catch (err) {
         setError('Failed to fetch orders');
