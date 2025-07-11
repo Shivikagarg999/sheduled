@@ -4,6 +4,11 @@ import Head from 'next/head';
 import Nav from '../nav/page';
 import bgimg from '../../../public/images/bg.png';
 import { useRouter } from 'next/navigation';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+// Initialize Mapbox
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
 
 export default function SendParcel() {
   const [step, setStep] = useState(1);
@@ -24,6 +29,11 @@ export default function SendParcel() {
   const [dropSearchResults, setDropSearchResults] = useState([]);
   const [showPickupResults, setShowPickupResults] = useState(false);
   const [showDropResults, setShowDropResults] = useState(false);
+  
+  const pickupMapRef = useRef(null);
+  const dropMapRef = useRef(null);
+  const pickupMarkerRef = useRef(null);
+  const dropMarkerRef = useRef(null);
   
   const [formData, setFormData] = useState({
     // Pickup Location Fields
@@ -71,6 +81,132 @@ export default function SendParcel() {
     'Ras-Al-Khaimah'
   ];
 
+  // Initialize Pickup Map
+  useEffect(() => {
+    if (!pickupMapRef.current || !pickupMapCenter) return;
+
+    const map = new mapboxgl.Map({
+      container: pickupMapRef.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [pickupMapCenter.lng, pickupMapCenter.lat],
+      zoom: 14
+    });
+
+    // Add marker if position exists
+    if (pickupMarkerPosition) {
+      pickupMarkerRef.current = new mapboxgl.Marker()
+        .setLngLat([pickupMarkerPosition.lng, pickupMarkerPosition.lat])
+        .addTo(map);
+    }
+
+    // Add click event to set marker
+    map.on('click', (e) => {
+      const { lng, lat } = e.lngLat;
+      
+      // Remove existing marker
+      if (pickupMarkerRef.current) {
+        pickupMarkerRef.current.remove();
+      }
+      
+      // Add new marker
+      pickupMarkerRef.current = new mapboxgl.Marker()
+        .setLngLat([lng, lat])
+        .addTo(map);
+      
+      setPickupMarkerPosition({ lat, lng });
+      setFormData(prev => ({
+        ...prev,
+        pickupLat: lat,
+        pickupLng: lng
+      }));
+      
+      // Reverse geocode to get address
+      reverseGeocode(lng, lat, true);
+    });
+
+    return () => map.remove();
+  }, [pickupMapCenter]);
+
+  // Initialize Drop Map
+  useEffect(() => {
+    if (!dropMapRef.current || !dropMapCenter) return;
+
+    const map = new mapboxgl.Map({
+      container: dropMapRef.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [dropMapCenter.lng, dropMapCenter.lat],
+      zoom: 14
+    });
+
+    // Add marker if position exists
+    if (dropMarkerPosition) {
+      dropMarkerRef.current = new mapboxgl.Marker()
+        .setLngLat([dropMarkerPosition.lng, dropMarkerPosition.lat])
+        .addTo(map);
+    }
+
+    // Add click event to set marker
+    map.on('click', (e) => {
+      const { lng, lat } = e.lngLat;
+      
+      // Remove existing marker
+      if (dropMarkerRef.current) {
+        dropMarkerRef.current.remove();
+      }
+      
+      // Add new marker
+      dropMarkerRef.current = new mapboxgl.Marker()
+        .setLngLat([lng, lat])
+        .addTo(map);
+      
+      setDropMarkerPosition({ lat, lng });
+      setFormData(prev => ({
+        ...prev,
+        dropLat: lat,
+        dropLng: lng
+      }));
+      
+      // Reverse geocode to get address
+      reverseGeocode(lng, lat, false);
+    });
+
+    return () => map.remove();
+  }, [dropMapCenter]);
+
+  // Reverse geocode coordinates to address
+  const reverseGeocode = async (lng, lat, isPickup) => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}&types=address,poi,neighborhood,place`
+      );
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const location = data.features[0];
+        const emirate = location.context?.find(c => emirates.includes(c.text))?.text || '';
+        const area = location.text || '';
+        
+        if (isPickup) {
+          setPickupSearchQuery(location.place_name);
+          setFormData(prev => ({
+            ...prev,
+            pickupArea: area,
+            pickupEmirate: emirate
+          }));
+        } else {
+          setDropSearchQuery(location.place_name);
+          setFormData(prev => ({
+            ...prev,
+            dropArea: area,
+            dropEmirate: emirate
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Reverse geocode error:', err);
+    }
+  };
+
   // Search for pickup locations
   const searchPickupLocations = async (query) => {
     if (!query) {
@@ -80,12 +216,12 @@ export default function SendParcel() {
 
     try {
       const response = await fetch(
-        `https://us1.locationiq.com/v1/search.php?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&q=${encodeURIComponent(query)}&format=json&countrycodes=ae&limit=5&addressdetails=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}&autocomplete=true&country=AE&limit=5`
       );
-      const results = await response.json();
-      setPickupSearchResults(results);
+      const data = await response.json();
+      setPickupSearchResults(data.features || []);
     } catch (err) {
-      console.error('LocationIQ search error:', err);
+      console.error('Mapbox search error:', err);
       setPickupSearchResults([]);
     }
   };
@@ -99,102 +235,55 @@ export default function SendParcel() {
 
     try {
       const response = await fetch(
-        `https://us1.locationiq.com/v1/search.php?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&q=${encodeURIComponent(query)}&format=json&countrycodes=ae&limit=5&addressdetails=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}&autocomplete=true&country=AE&limit=5`
       );
-      const results = await response.json();
-      setDropSearchResults(results);
+      const data = await response.json();
+      setDropSearchResults(data.features || []);
     } catch (err) {
-      console.error('LocationIQ search error:', err);
+      console.error('Mapbox search error:', err);
       setDropSearchResults([]);
     }
   };
 
-  // Extract address components from location
-  const extractAddressComponents = (location) => {
-    const { address } = location;
-    if (!address) return { building: '', area: '', emirate: '' };
-
-    // Building detection
-    const building = address.house_number || 
-                    address.building || 
-                    address.amenity || 
-                    address.road || 
-                    '';
-
-    // Area detection
-    const area = address.neighbourhood ||
-                address.suburb ||
-                address.city_district ||
-                address.town ||
-                address.village ||
-                address.city ||
-                '';
-
-    // Emirate detection
-    let emirate = '';
-    const addressValues = Object.values(address);
-    for (const val of addressValues) {
-      if (emirates.includes(val)) {
-        emirate = val;
-        break;
-      }
-    }
-
-    // Special case for Dubai
-    if (!emirate && location.display_name.toLowerCase().includes('dubai')) {
-      emirate = 'Dubai';
-    }
-
-    return { building, area, emirate };
-  };
-
   // Handle pickup location selection
   const handlePickupLocationSelect = (location) => {
-    const { building, area, emirate } = extractAddressComponents(location);
+    const [lng, lat] = location.center;
+    const emirate = location.context?.find(c => emirates.includes(c.text))?.text || '';
+    const area = location.text || '';
     
-    console.log('Selected pickup location:', {
-      display_name: location.display_name,
-      address: location.address,
-      extracted: { building, area, emirate }
-    });
-    
-    setPickupSearchQuery(location.display_name);
-    setPickupMapCenter({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
-    setPickupMarkerPosition({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
+    setPickupSearchQuery(location.place_name);
+    setPickupMapCenter({ lat, lng });
+    setPickupMarkerPosition({ lat, lng });
     setShowPickupResults(false);
     
     setFormData(prev => ({
       ...prev,
-      pickupBuilding: building,
+      pickupBuilding: '',
       pickupArea: area,
       pickupEmirate: emirate,
-      pickupLat: location.lat,
-      pickupLng: location.lon
+      pickupLat: lat,
+      pickupLng: lng
     }));
   };
 
   // Handle drop location selection
   const handleDropLocationSelect = (location) => {
-    const { building, area, emirate } = extractAddressComponents(location);
+    const [lng, lat] = location.center;
+    const emirate = location.context?.find(c => emirates.includes(c.text))?.text || '';
+    const area = location.text || '';
     
-    console.log('Selected drop location:', {
-      display_name: location.display_name,
-      address: location.address,
-      extracted: { building, area, emirate }
-    });
-    
-    setDropSearchQuery(location.display_name);
-    setDropMapCenter({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
-    setDropMarkerPosition({ lat: parseFloat(location.lat), lng: parseFloat(location.lon) });
+    setDropSearchQuery(location.place_name);
+    setDropMapCenter({ lat, lng });
+    setDropMarkerPosition({ lat, lng });
     setShowDropResults(false);
     
     setFormData(prev => ({
       ...prev,
-      dropBuilding: building,
+      dropBuilding: '',
       dropArea: area,
       dropEmirate: emirate,
-      dropLat: location.lat,
-      dropLng: location.lon
+      dropLat: lat,
+      dropLng: lng
     }));
   };
 
@@ -330,12 +419,6 @@ export default function SendParcel() {
     }));
   };
 
-  // Static map URL generator for LocationIQ
-  const getStaticMapUrl = (center, marker) => {
-    if (!center) return '';
-    return `https://maps.locationiq.com/v3/staticmap?key=${process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY}&center=${center.lat},${center.lng}&zoom=15&size=600x300&markers=icon:small-red-cutout|${marker ? marker.lat : center.lat},${marker ? marker.lng : center.lng}`;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
       <Head>
@@ -449,7 +532,7 @@ export default function SendParcel() {
                               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                               onClick={() => handlePickupLocationSelect(location)}
                             >
-                              <div className="font-medium">{location.display_name}</div>
+                              <div className="font-medium">{location.place_name}</div>
                             </div>
                           ))}
                         </div>
@@ -458,13 +541,7 @@ export default function SendParcel() {
                     
                     {/* Map for Pickup Location */}
                     <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
-                      {pickupMapCenter && (
-                        <img
-                          src={getStaticMapUrl(pickupMapCenter, pickupMarkerPosition)}
-                          alt="Pickup location map"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
+                      <div ref={pickupMapRef} className="w-full h-full" />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -570,7 +647,7 @@ export default function SendParcel() {
                               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                               onClick={() => handleDropLocationSelect(location)}
                             >
-                              <div className="font-medium">{location.display_name}</div>
+                              <div className="font-medium">{location.place_name}</div>
                             </div>
                           ))}
                         </div>
@@ -579,13 +656,7 @@ export default function SendParcel() {
                     
                     {/* Map for Drop Location */}
                     <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
-                      {dropMapCenter && (
-                        <img
-                          src={getStaticMapUrl(dropMapCenter, dropMarkerPosition)}
-                          alt="Drop location map"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
+                      <div ref={dropMapRef} className="w-full h-full" />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -902,24 +973,6 @@ export default function SendParcel() {
                         </div>
                       </div>
                     </label>
-                    
-                    {/* <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="cash"
-                          checked={formData.paymentMethod === 'cash'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.paymentMethod === 'cash' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            Cash on Delivery
-                          </span>
-                        </div>
-                      </div>
-                    </label> */}
                   </div>
                 </div>
 
