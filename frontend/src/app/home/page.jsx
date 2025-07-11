@@ -116,7 +116,7 @@ export default function Main() {
 
   return (
     <div
-      className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-no-repeat bg-cover"
+      className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-white bg-no-repeat bg-cover"
       style={{ backgroundImage: `url(${bgimg.src})` }}
     >
       {/* Smooth blue blur cursor effect */}
