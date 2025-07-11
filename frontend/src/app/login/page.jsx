@@ -20,7 +20,7 @@ export default function LoginPage() {
  const handleLogin = async (e) => {
   e.preventDefault();
   try {
-    const res = await fetch('https://sheduled-8umy.onrender.com/api/user/login', {
+    const res = await fetch('/api/user/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
@@ -65,7 +65,7 @@ const handleGoogleLogin = useGoogleLogin({
         `${userInfo.data.given_name || ''} ${userInfo.data.family_name || ''}`.trim();
 
       // Step 3: Send user to your backend
-      const res = await fetch('https://sheduled-8umy.onrender.com/api/user/google-login', {
+      const res = await fetch('/api/user/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

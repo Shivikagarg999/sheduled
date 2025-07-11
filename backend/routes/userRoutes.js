@@ -5,11 +5,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Order= require('../models/order')
 const auth = require("../middleware/auth")
+const optionalAuth = require("../middleware/optionalAuth")
 
-
-router.get('/ping',auth, async(req, res)=>{
-  res.send("pong")
-})
+// 💎AUTH
 router.post('/register', async (req, res) => {
   try {
     const { name, email, phone, password, googleId } = req.body;
@@ -149,6 +147,56 @@ router.post('/google-login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// 💎PROFILE
+
+// Get
+router.get('/profile', auth, (req, res) => {
+  res.json({ user: req.user });
+});
+
+// Edit user profile
+router.put('/edit-profile', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, phone, addresses } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // If updating phone, check uniqueness
+    if (phone && phone !== user.phone) {
+      const existingPhone = await User.findOne({ phone });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'Phone number already in use' });
+      }
+      user.phone = phone;
+    }
+
+    if (name) user.name = name;
+    if (addresses) user.addresses = addresses;
+
+    user.updatedAt = Date.now();
+    await user.save();
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        addresses: user.addresses
+      }
+    });
+  } catch (err) {
+    console.error('Edit Profile Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+//💎 ORDERS
+
 // All Orders for a user
 router.get('/allOrders/:userId', async (req, res) => {
   try {
@@ -159,4 +207,5 @@ router.get('/allOrders/:userId', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user orders' });
   }
 });
+
 module.exports = router;
