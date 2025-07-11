@@ -4,7 +4,12 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Order= require('../models/order')
+const auth = require("../middleware/auth")
 
+
+router.get('/ping',auth, async(req, res)=>{
+  res.send("pong")
+})
 router.post('/register', async (req, res) => {
   try {
     const { name, email, phone, password, googleId } = req.body;

@@ -8,6 +8,8 @@ const userRoutes= require('./routes/userRoutes')
 
 const app = express();
 
+app.options('*', cors());
+
 app.use(cors({
   origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com'],
   credentials: true
