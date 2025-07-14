@@ -490,7 +490,7 @@ export default function SendParcel() {
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg text-black shadow-sm border border-gray-200 overflow-hidden">
           {step === 1 && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">
