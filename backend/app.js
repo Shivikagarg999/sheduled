@@ -6,6 +6,8 @@ const cors = require('cors');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
+const driverRoutes = require('./routes/driverRoutes')
+const adminAuthRoutes = require('./routes/admin/auth')
 
 const app = express();
 
@@ -46,6 +48,9 @@ app.get('/', (req, res) => {
 app.use('/api/orders', orderRoutes);
 app.use('/api/pay', paymentRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/driver',  driverRoutes);
+app.use('/api/admin', adminAuthRoutes);
+
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
