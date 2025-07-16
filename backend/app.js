@@ -8,6 +8,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const driverRoutes = require('./routes/driverRoutes')
 const adminAuthRoutes = require('./routes/admin/auth')
+const adminUserRoutes = require('./routes/admin/user')
 
 const app = express();
 
@@ -50,7 +51,7 @@ app.use('/api/pay', paymentRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/driver',  driverRoutes);
 app.use('/api/admin', adminAuthRoutes);
-
+app.use('/api/admin/user', adminUserRoutes)
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
