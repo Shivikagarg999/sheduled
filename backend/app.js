@@ -16,7 +16,8 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     "http://localhost:3000",
     "https://sheduled.vercel.app",
-    "https://www.sheduled.com"
+    "https://www.sheduled.com",
+    "https://sheduled-admin-t4nj.vercel.app/"
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -35,7 +36,7 @@ app.use((req, res, next) => {
 
 // ✅ Then use cors() — trust but verify
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com'],
+  origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com', "https://sheduled-admin-t4nj.vercel.app/"],
   credentials: true,
 }));
 
