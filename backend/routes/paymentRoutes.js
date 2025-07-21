@@ -83,4 +83,16 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   res.status(200).end();
 });
 
+router.get('/all/payments', async (req, res) => {
+  try {
+    const charges = await stripe.charges.list({
+      limit: 100,
+    });
+
+    res.json(charges.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes');
 const driverRoutes = require('./routes/driverRoutes')
 const adminAuthRoutes = require('./routes/admin/auth')
 const adminUserRoutes = require('./routes/admin/user')
+const adminOrderRoutes = require('./routes/admin/order')
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.use((req, res, next) => {
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
@@ -34,7 +35,6 @@ app.use((req, res, next) => {
 });
 
 
-// ✅ Then use cors() — trust but verify
 app.use(cors({
   origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com', "https://sheduled-admin-t4nj.vercel.app"],
   credentials: true,
@@ -62,6 +62,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/driver',  driverRoutes);
 app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin/user', adminUserRoutes)
+app.use('/api/admin/order', adminOrderRoutes)
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
