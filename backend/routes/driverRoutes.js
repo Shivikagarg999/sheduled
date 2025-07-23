@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { registerDriver, loginDriver } = require('../controllers/driver/auth');
+const { driverLogin } = require('../controllers/driver/auth');
 
-router.post('/register', registerDriver);
-router.post('/login', loginDriver);
+router.post('/login', driverLogin);
 
 module.exports = router;

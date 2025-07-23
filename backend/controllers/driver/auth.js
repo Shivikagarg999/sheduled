@@ -1,59 +1,54 @@
-const Driver = require('../../models/driver');
-const jwt = require('jsonwebtoken');
+const Driver = require("../../models/driver");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '7d'
-  });
-};
-
-// REGISTER
-exports.registerDriver = async (req, res) => {
-  try {
-    const { name, phone, email, password } = req.body;
-
-    const existing = await Driver.findOne({ phone });
-    if (existing) return res.status(400).json({ message: 'Phone already registered' });
-
-    const driver = await Driver.create({ name, phone, email, password });
-
-    res.status(201).json({
-      success: true,
-      message: 'Driver registered',
-      data: {
-        _id: driver._id,
-        name: driver.name,
-        phone: driver.phone,
-        token: generateToken(driver._id)
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Registration failed', error: err.message });
-  }
-};
-
-// LOGIN
-exports.loginDriver = async (req, res) => {
+exports.driverLogin = async (req, res) => {
   try {
     const { phone, password } = req.body;
 
+    if (!phone || !password) {
+      return res.status(400).json({ message: "Phone and password are required" });
+    }
+
     const driver = await Driver.findOne({ phone });
-    if (!driver) return res.status(404).json({ message: 'Driver not found' });
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
 
-    const isMatch = await driver.matchPassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    const isMatch = await bcrypt.compare(password, driver.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        _id: driver._id,
+    const token = jwt.sign(
+      { id: driver._id, role: "driver" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      driver: {
+        id: driver._id,
         name: driver.name,
-        phone: driver.phone,
-        token: generateToken(driver._id)
+        phone: driver.phone
       }
     });
+  } catch (error) {
+    res.status(500).json({ message: "Login failed", error: error.message });
+  }
+};
+
+exports.getDriverProfile = async (req, res) => {
+  try {
+    const driver = await Driver.findById(req.driver.id).select("-password");
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+    res.status(200).json(driver);
   } catch (err) {
-    res.status(500).json({ message: 'Login failed', error: err.message });
+    console.error("Error fetching driver profile:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
