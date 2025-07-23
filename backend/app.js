@@ -10,6 +10,7 @@ const driverRoutes = require('./routes/driverRoutes')
 const adminAuthRoutes = require('./routes/admin/auth')
 const adminUserRoutes = require('./routes/admin/user')
 const adminOrderRoutes = require('./routes/admin/order')
+const adminDriverRoutes = require('./routes/admin/driver')
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use('/api/driver',  driverRoutes);
 app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin/user', adminUserRoutes)
 app.use('/api/admin/order', adminOrderRoutes)
+app.use('/api/admin/driver', adminDriverRoutes)
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
