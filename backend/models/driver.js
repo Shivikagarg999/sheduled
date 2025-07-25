@@ -7,6 +7,10 @@ const driverSchema = new mongoose.Schema({
   phone: { type: String, unique: true },
   email: String,
   password: String,
+  orders: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Order' 
+  }],
   location: {
     type: {
       type: String,

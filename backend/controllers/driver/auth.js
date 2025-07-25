@@ -1,6 +1,7 @@
 const Driver = require("../../models/driver");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Order= require('../../models/order')
 
 exports.driverLogin = async (req, res) => {
   try {
@@ -50,5 +51,22 @@ exports.getDriverProfile = async (req, res) => {
   } catch (err) {
     console.error("Error fetching driver profile:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getMyOrders = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+
+    const orders = await Order.find({ driver: driverId })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

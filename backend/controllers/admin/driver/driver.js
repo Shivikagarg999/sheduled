@@ -68,29 +68,27 @@ const deleteDriver = async (req, res) => {
   }
 };
 
-// ✅ Assign driver to order
+
 const assignDriverToOrder = async (req, res) => {
   try {
     const { orderId, driverId } = req.body;
 
-    const order = await Order.findById(orderId);
-    const driver = await Driver.findById(driverId);
+    // 1. Update the order with driver
+    const order = await Order.findByIdAndUpdate(orderId, { driver: driverId }, { new: true });
 
-    if (!order || !driver) {
-      return res.status(404).json({ message: 'Order or Driver not found' });
-    }
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    order.driver = driver._id;
-    await order.save();
+    // 2. Update the driver by adding order to their list
+    await Driver.findByIdAndUpdate(driverId, { $addToSet: { orders: order._id } });
 
-    driver.assignedOrders.push(order._id);
-    await driver.save();
+    res.status(200).json({ success: true, message: 'Driver assigned', data: order });
 
-    res.json({ message: 'Driver assigned to order successfully' });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
 
 module.exports = {
   registerDriver,
