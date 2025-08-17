@@ -7,12 +7,21 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-
 import bgimg from "../../../public/images/bg.png"
 import cent from "../../../public/images/cent.png"
 import Nav from '../nav/page';
+import Sidebar from '../dashboard/sidebar/page';
 
 export default function Main() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Added sidebar state
   const { scrollY } = useScroll();
   
+  useEffect(() => {
+    const token = localStorage.getItem('token') || 
+                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    setHasToken(!!token);
+  }, []);
+
   // Cursor blur effect refs
   const blurRef = useRef(null);
   const positionRef = useRef({ x: 0, y: 0 });
@@ -30,8 +39,8 @@ export default function Main() {
     const updateBlurPosition = () => {
       if (!blurRef.current) return;
       
-      const currentX = parseFloat(blurRef.current.style.transform.split('(')[1].split(',')[0]) || 0;
-      const currentY = parseFloat(blurRef.current.style.transform.split(',')[1].split(')')[0]) || 0;
+      const currentX = parseFloat(blurRef.current.style.transform.split('(')[1]?.split(',')[0]) || 0;
+      const currentY = parseFloat(blurRef.current.style.transform.split(',')[1]?.split(')')[0]) || 0;
       
       const newX = lerp(currentX, targetPositionRef.current.x, 0.1);
       const newY = lerp(currentY, targetPositionRef.current.y, 0.1);
@@ -119,19 +128,36 @@ export default function Main() {
       className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-white bg-no-repeat bg-cover"
       style={{ backgroundImage: `url(${bgimg.src})` }}
     >
+      {/* Conditionally render Sidebar or Nav with proper props */}
+      {hasToken ? (
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          setCollapsed={setSidebarCollapsed} 
+        />
+      ) : (
+        <Nav />
+      )}
+
       {/* Smooth blue blur cursor effect */}
       <div
         ref={blurRef}
-        className="fixed w-32 h-32 bg-blue-500/60 rounded-full blur-[80px] pointer-events-none -z-0"
+        className="fixed w-32 h-32 bg-blue-500/60 rounded-full blur-[80px] pointer-events-none z-0"
         style={{ 
           transform: 'translate(-100px, -100px)',
           willChange: 'transform'
         }}
       />
 
-      <div className="relative z-10">
-        <Nav/>
-
+      {/* Main content with proper margins when sidebar is present */}
+      <div 
+        className={`relative z-10 transition-all duration-300 ${
+          hasToken 
+            ? sidebarCollapsed 
+              ? 'ml-16' // Collapsed sidebar width
+              : 'ml-64' // Full sidebar width
+            : 'ml-0' // No sidebar
+        }`}
+      >
         {/* Mobile Menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
@@ -218,7 +244,7 @@ export default function Main() {
             variants={fadeIn}
             className="text-4xl md:text-5xl text-black mt-2 mb-4"
           >
-           No Warehouses. No Dark Stores. No Last Mile Headaches. Just True End-to-End Delivery.
+            No Warehouses. No Dark Stores. No Last Mile Headaches. Just True End-to-End Delivery.
           </motion.h1>
 
           {/* Description */}
@@ -226,39 +252,39 @@ export default function Main() {
             variants={fadeIn}
             className="text-gray-500 max-w-2xl mx-auto mb-8 text-sm md:text-base"
           >
-           We’re redefining delivery by eliminating the clutter — no warehouses, no dark stores, no last-mile chaos. Our end-to-end platform connects businesses directly to customers, replacing outdated logistics with a smarter, faster, and more efficient 24 hrs delivery.
+            We're redefining delivery by eliminating the clutter — no warehouses, no dark stores, no last-mile chaos. Our end-to-end platform connects businesses directly to customers, replacing outdated logistics with a smarter, faster, and more efficient 24 hrs delivery.
           </motion.p>
 
-       <motion.div 
-  variants={fadeIn}
-  className="flex justify-center items-center gap-4 mb-12"
->
-  <Link href="/send-parcel">
-    <motion.button 
-      whileHover={{ 
-        scale: 1.05,
-        boxShadow: "0 10px 20px rgba(59, 130, 246, 0.3)"
-      }}
-      whileTap={{ scale: 0.95 }}
-      className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-md shadow-md font-medium"
-    >
-      Send Parcel
-    </motion.button>
-  </Link>
+          <motion.div 
+            variants={fadeIn}
+            className="flex justify-center items-center gap-4 mb-12"
+          >
+            <Link href="/send-parcel">
+              <motion.button 
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 10px 20px rgba(59, 130, 246, 0.3)"
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-md shadow-md font-medium"
+              >
+                Send Parcel
+              </motion.button>
+            </Link>
 
-  <Link href="/signup">
-    <motion.button 
-      whileHover={{ 
-        scale: 1.05,
-        boxShadow: "0 10px 20px rgba(191, 219, 254, 0.5)"
-      }}
-      whileTap={{ scale: 0.95 }}
-      className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-6 py-3 rounded-md shadow-md font-medium"
-    >
-      Sign Up
-    </motion.button>
-  </Link>
-</motion.div>
+            <Link href="/signup">
+              <motion.button 
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 10px 20px rgba(191, 219, 254, 0.5)"
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-6 py-3 rounded-md shadow-md font-medium"
+              >
+                Sign Up
+              </motion.button>
+            </Link>
+          </motion.div>
 
           {/* Image Card */}
           <motion.div 
@@ -279,7 +305,7 @@ export default function Main() {
                 transition={{ delay: 0.6 }}
                 src={cent.src}
                 alt="Tracking App UI"
-                className="rounded-2xl w-full h-auto"
+                className="rounded-2xl w-full h-auto max-w-4xl"
               />
             </motion.div>
           </motion.div>

@@ -34,7 +34,7 @@ export default function LoginPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('userId', data.user.id);
 
-      router.push('/dashboard');
+      router.push('/');
     } else {
       alert(data.message || 'Login failed');
     }
@@ -112,7 +112,6 @@ const handleGoogleLogin = useGoogleLogin({
         style={{ backgroundImage: `url(${bgimg.src})` }}
       >
         <div className="bg-white shadow-lg rounded-lg p-10 m-28 w-full max-w-md">
-          <h1 className="text-2xl font-bold text-blue-800 text-center mb-4">Sheduled</h1>
           <h2 className="text-xl mb-6 font-semibold text-gray-700 text-center">Log in</h2>
 
           <form onSubmit={handleLogin}>
@@ -142,13 +141,9 @@ const handleGoogleLogin = useGoogleLogin({
               />
             </div>
 
-            <div className="text-right text-sm text-blue-600 mb-4 hover:underline cursor-pointer">
-              Forgot password?
-            </div>
-
             <button
               type="submit"
-              className="w-full bg-yellow-400 text-white py-2 rounded hover:bg-yellow-500 font-semibold mb-4"
+              className="w-full bg-yellow-400 mt-6 text-white py-2 rounded hover:bg-yellow-500 font-semibold mb-4"
             >
               Log in
             </button>

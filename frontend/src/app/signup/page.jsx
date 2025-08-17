@@ -83,7 +83,6 @@ export default function Signup() {
         style={{ backgroundImage: `url(${bgimg.src})` }}
       >
         <div className="bg-white shadow-lg rounded-lg p-10 m-28 w-full max-w-md">
-          <h1 className="text-2xl font-bold text-blue-800 text-center mb-4">Sheduled</h1>
           <h2 className="text-xl mb-6 font-semibold text-gray-700 text-center">Create Account</h2>
           
           <form onSubmit={handleRegister}>

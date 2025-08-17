@@ -6,6 +6,7 @@ import bgimg from '../../../public/images/bg.png';
 import { useRouter } from 'next/navigation';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import Sidebar from '../dashboard/sidebar/page';
 
 // Initialize Mapbox
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
@@ -17,6 +18,16 @@ export default function SendParcel() {
   const [success, setSuccess] = useState(null);
   const [orderDetails, setOrderDetails] = useState(null);
   const router = useRouter();
+  const [hasToken, setHasToken] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Added sidebar state
+
+  useEffect(() => {
+    // Check for token in localStorage or cookies
+    const token = localStorage.getItem('token') || 
+                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    
+    setHasToken(!!token);
+  }, []);
   
   // Location state
   const [pickupMapCenter, setPickupMapCenter] = useState({ lat: 25.2048, lng: 55.2708 }); // Dubai coordinates
@@ -341,73 +352,85 @@ export default function SendParcel() {
     return basePrice;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(null);
 
-    try {
-      // Calculate final price 
-      const price = calculatePrice();
-      const orderData = {
-        pickupBuilding: formData.pickupBuilding,
-        pickupApartment: formData.pickupApartment,
-        pickupEmirate: formData.pickupEmirate,
-        pickupArea: formData.pickupArea,
-        pickupLat: formData.pickupLat,
-        pickupLng: formData.pickupLng,
-        dropBuilding: formData.dropBuilding,
-        dropApartment: formData.dropApartment,
-        dropEmirate: formData.dropEmirate,
-        dropArea: formData.dropArea,
-        dropLat: formData.dropLat,
-        dropLng: formData.dropLng,
-        pickupContact: formData.pickupContact,
-        dropContact: formData.dropContact,
-        deliveryType: formData.deliveryType,
-        returnType: formData.returnType,
-        paymentMethod: formData.paymentMethod,
-        amount: price,
-        notes: formData.notes || ''
-      };
+  try {
+    // Get token from storage
+    const token = localStorage.getItem('token') || 
+                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
-      const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
+    // Calculate final price 
+    const price = calculatePrice();
+    const orderData = {
+      pickupBuilding: formData.pickupBuilding,
+      pickupApartment: formData.pickupApartment,
+      pickupEmirate: formData.pickupEmirate,
+      pickupArea: formData.pickupArea,
+      pickupLat: formData.pickupLat,
+      pickupLng: formData.pickupLng,
+      dropBuilding: formData.dropBuilding,
+      dropApartment: formData.dropApartment,
+      dropEmirate: formData.dropEmirate,
+      dropArea: formData.dropArea,
+      dropLat: formData.dropLat,
+      dropLng: formData.dropLng,
+      pickupContact: formData.pickupContact,
+      dropContact: formData.dropContact,
+      deliveryType: formData.deliveryType,
+      returnType: formData.returnType,
+      paymentMethod: formData.paymentMethod,
+      amount: price,
+      notes: formData.notes || ''
+    };
 
-      const data = await response.json();
+    // Prepare headers
+    const headers = {
+      'Content-Type': 'application/json',
+    };
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create order');
-      }
-
-      // Update state with order details
-      setOrderDetails({
-        orderId: data.orderId,
-        trackingNumber: data.trackingNumber
-      });
-      
-      // Redirect based on payment method
-      if (formData.paymentMethod === 'cash') {
-        // For cash on delivery, go directly to success page with order ID
-        router.push(`/successpay?order_id=${data.orderId}`);
-      } else {
-        // For card payments, go to payment page
-        router.push(`/payment/${data.orderId}`);
-      }
-      
-    } catch (err) {
-      console.error('Order creation error:', err);
-      setError(err.message || 'Failed to create order. Please try again.');
-    } finally {
-      setLoading(false);
+    // Add Authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-  };
+
+    const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(orderData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create order');
+    }
+
+    // Update state with order details
+    setOrderDetails({
+      orderId: data.orderId,
+      trackingNumber: data.trackingNumber
+    });
+    
+    // Redirect based on payment method
+    if (formData.paymentMethod === 'cash') {
+      // For cash on delivery, go directly to success page with order ID
+      router.push(`/successpay?order_id=${data.orderId}`);
+    } else {
+      // For card payments, go to payment page
+      router.push(`/payment/${data.orderId}`);
+    }
+    
+  } catch (err) {
+    console.error('Order creation error:', err);
+    setError(err.message || 'Failed to create order. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
   
   const handleCont = (e) => {
     const { name, value } = e.target;
@@ -421,14 +444,31 @@ export default function SendParcel() {
 
   return (
     <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
+      {/* Fixed Sidebar/Nav rendering with proper props */}
+      {hasToken ? (
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          setCollapsed={setSidebarCollapsed} 
+        />
+      ) : (
+        <Nav />
+      )}
+      
       <Head>
         <title>Send Parcel | Delivery App</title>
         <meta name="description" content="Send parcels across UAE" />
       </Head>
 
-      <Nav/>
-
-      <main className="max-w-4xl  mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      {/* Main content with proper margins when sidebar is present */}
+      <main 
+        className={` className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300 ml-0 ${
+          hasToken 
+            ? sidebarCollapsed 
+              ? 'ml-16' // Collapsed sidebar width
+              : 'ml-64' // Full sidebar width
+            : 'ml-0' // No sidebar
+        }`}
+      >
         {/* Header */}
         <div className="text-center mb-8 pt-16">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Send a Parcel</h1>

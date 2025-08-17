@@ -88,7 +88,18 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign(
+  {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    googleId: user.googleId,
+    addresses: user.addresses
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
 
     res.status(200).json({
       message: 'Login successful',
@@ -129,8 +140,19 @@ router.post('/google-login', async (req, res) => {
         password: null
       });
     }
+const token = jwt.sign(
+  {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    googleId: user.googleId,
+    addresses: user.addresses
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(200).json({
       message: 'Google login successful',
