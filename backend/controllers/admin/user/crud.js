@@ -10,7 +10,6 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// 🔹 Get single user
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -22,7 +21,6 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-// 🔹 Create user (optional, for testing or manual addition)
 exports.createUser = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;

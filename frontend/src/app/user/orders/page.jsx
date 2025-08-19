@@ -1,238 +1,267 @@
-'use client';
+"use client"
 
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import Sidebar from '../../dashboard/sidebar/page';
-import { 
-  FiBox, 
-  FiMapPin, 
-  FiClock, 
-  FiTruck, 
-  FiDollarSign, 
-  FiCreditCard,
-  FiChevronDown,
-  FiChevronUp
-} from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import bgimg from "../../../../public/images/bg.png";
+import Nav from '@/app/nav/page';
+import Sidebar from '@/app/dashboard/sidebar/page';
+import Link from 'next/link';
 
-const OrdersPage = () => {
+export default function OrdersPage() {
+  const [scrolled, setScrolled] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [orders, setOrders] = useState([]);
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        setError('User not logged in');
-        setLoading(false);
-        return;
-      }
+    const token = localStorage.getItem('token') || 
+                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    setHasToken(!!token);
 
-      try {
-        const res = await axios.get(`/api/user/allOrders/${userId}`);
-        setOrders(res.data);
-      } catch (err) {
-        setError('Failed to fetch orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
+    if (token) {
+      fetchOrders(token);
+    }
   }, []);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-700';
-      case 'failed':
-        return 'bg-red-100 text-red-700';
-      case 'refunded':
-        return 'bg-blue-100 text-blue-700';
-      default: // pending
-        return 'bg-yellow-100 text-yellow-700';
+  const fetchOrders = async (token) => {
+    try {
+      // Extract user ID from token (assuming it's a JWT)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.id; // Adjust based on your token structure
+
+      const response = await fetch(`/api/user/allOrders/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      const data = await response.json();
+      setOrders(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formatAddress = (order, type) => {
-    if (type === 'pickup') {
-      return `${order.pickupBuilding}, ${order.pickupApartment}, ${order.pickupArea}, ${order.pickupEmirate}`;
+  const fadeIn = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" }
     }
-    return `${order.dropBuilding}, ${order.dropApartment}, ${order.dropArea}, ${order.dropEmirate}`;
   };
 
-  const toggleOrderExpand = (orderId) => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const orderCardVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10
+      }
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar - Desktop */}
-      <Sidebar 
-        collapsed={collapsed} 
-        setCollapsed={setCollapsed} 
-        mobileMenuOpen={mobileMenuOpen} 
-        setMobileMenuOpen={setMobileMenuOpen} 
-      />
+    <div
+      className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-white bg-no-repeat bg-cover"
+      style={{ backgroundImage: `url(${bgimg.src})` }}
+    >
+      {hasToken ? (
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          setCollapsed={setSidebarCollapsed} 
+        />
+      ) : (
+        <Nav />
+      )}
 
-      {/* Main Content */}
-      <main className={`
-        flex-1 transition-all duration-300 ease-in-out
-        ${collapsed ? 'md:ml-20' : 'md:ml-64'}
-        ${mobileMenuOpen ? 'ml-64' : 'ml-0'}
-      `}>
-        <div className="p-4 md:p-6">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">My Orders</h1>
+      <div 
+        className={`relative z-10 transition-all duration-300 ${
+          hasToken 
+            ? sidebarCollapsed 
+              ? 'ml-16'
+              : 'ml-64'
+            : 'ml-0'
+        }`}
+      >
+        <motion.section 
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="w-full py-12 px-4 sm:px-6 lg:px-8 relative z-10"
+        >
+          <motion.div variants={fadeIn} className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+            <p className="mt-2 text-sm text-gray-600">All Orders made till date.</p>
+          </motion.div>
 
-            {/* Mobile Menu Toggle Button (only visible on mobile) */}
-            <button 
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg z-20"
+          {loading ? (
+            <motion.div 
+              variants={fadeIn}
+              className="flex justify-center items-center py-12"
             >
-              <FiBox className="h-6 w-6" />
-            </button>
-
-            {/* Loading and Error States */}
-            {loading && (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            )}
-            
-            {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </motion.div>
+          ) : error ? (
+            <motion.div 
+              variants={fadeIn}
+              className="bg-red-50 border-l-4 border-red-500 p-4 mb-6"
+            >
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               </div>
-            )}
-
-            {!loading && !error && orders.length === 0 && (
-              <div className="bg-white rounded-lg shadow p-6 text-center">
-                <FiBox className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-lg font-medium text-gray-900">No orders found</h3>
-                <p className="mt-1 text-sm text-gray-500">You haven't placed any orders yet.</p>
-              </div>
-            )}
-
-            {/* Orders List */}
-            {!loading && !error && orders.length > 0 && (
-              <div className="space-y-4">
-                {orders.map(order => (
-                  <div
-                    key={order._id}
-                    className="bg-white shadow rounded-lg overflow-hidden border border-gray-200"
+            </motion.div>
+          ) : orders.length === 0 ? (
+            <motion.div 
+              variants={fadeIn}
+              className="text-center py-12"
+            >
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+              <p className="mt-1 text-sm text-gray-500">You haven't placed any orders yet.</p>
+              <div className="mt-6">
+                <Link href="/send-parcel">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    {/* Order Header - Always visible */}
-                    <div 
-                      className="p-4 cursor-pointer flex justify-between items-center"
-                      onClick={() => toggleOrderExpand(order._id)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`h-3 w-3 rounded-full ${
-                          order.status === 'completed' ? 'bg-green-500' :
-                          order.status === 'failed' ? 'bg-red-500' :
-                          'bg-yellow-500'
-                        }`}></div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">
-                            #{order.trackingNumber}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
+                    Create New Order
+                  </motion.button>
+                </Link>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              variants={staggerContainer}
+              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto"
+            >
+              {orders.map((order, index) => (
+                <motion.div
+                  key={order._id}
+                  custom={index}
+                  variants={orderCardVariants}
+                  whileHover={{ y: -5, boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)" }}
+                  className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 border border-gray-100"
+                >
+                  <div className="px-4 py-5 sm:px-6 bg-gray-50">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Order #{order.trackingNumber}
+                      </h3>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Placed on {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="px-4 py-5 sm:p-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">Pickup</h4>
+                        <p className="mt-1 text-sm text-gray-900">
+                          {order.pickupBuilding}, {order.pickupArea}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {order.pickupEmirate}
+                        </p>
                       </div>
-                      <div className="flex items-center">
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                        {expandedOrderId === order._id ? (
-                          <FiChevronUp className="ml-2 text-gray-500" />
-                        ) : (
-                          <FiChevronDown className="ml-2 text-gray-500" />
-                        )}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">Dropoff</h4>
+                        <p className="mt-1 text-sm text-gray-900">
+                          {order.dropBuilding}, {order.dropArea}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {order.dropEmirate}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Order Details - Collapsible */}
-                    {expandedOrderId === order._id && (
-                      <div className="border-t border-gray-200 p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                              <FiMapPin className="text-red-500" />
-                              Pickup Location
-                            </div>
-                            <div className="text-sm text-gray-600 pl-6">
-                              {formatAddress(order, 'pickup')}
-                              <div className="mt-1 text-xs text-gray-500">
-                                Contact: {order.pickupContact}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                              <FiMapPin className="text-green-500" />
-                              Drop Location
-                            </div>
-                            <div className="text-sm text-gray-600 pl-6">
-                              {formatAddress(order, 'drop')}
-                              <div className="mt-1 text-xs text-gray-500">
-                                Contact: {order.dropContact}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                            <FiTruck className="text-purple-500" />
-                            <div>
-                              <p className="text-gray-500">Service</p>
-                              <p className="font-medium capitalize">{order.deliveryType}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                            <FiCreditCard className="text-blue-500" />
-                            <div>
-                              <p className="text-gray-500">Payment</p>
-                              <p className="font-medium capitalize">{order.paymentMethod}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                            <FiDollarSign className="text-green-500" />
-                            <div>
-                              <p className="text-gray-500">Amount</p>
-                              <p className="font-medium">AED {order.amount?.toFixed(2) || '0.00'}</p>
-                            </div>
-                          </div>
-                        </div>
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">Delivery Type</h4>
+                        <p className="mt-1 text-sm text-gray-900 capitalize">
+                          {order.deliveryType}
+                        </p>
                       </div>
-                    )}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500">Amount</h4>
+                        <p className="mt-1 text-sm text-gray-900">
+                          AED {order.amount}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
+                  <div className="px-4 py-4 sm:px-6 bg-gray-50">
+                    <div className="flex justify-between items-center">
+                      <Link href={`/track-order/${order.trackingNumber}`}>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Track Order
+                        </motion.button>
+                      </Link>
+                      <span className={`text-sm font-medium ${
+                        order.paymentStatus === 'pending' ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {order.paymentStatus}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </motion.section>
+      </div>
     </div>
   );
-};
-
-export default OrdersPage;
+}

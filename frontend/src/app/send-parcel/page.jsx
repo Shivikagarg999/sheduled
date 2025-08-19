@@ -8,29 +8,47 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Sidebar from '../dashboard/sidebar/page';
 
-// Initialize Mapbox
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
 
 export default function SendParcel() {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [orderDetails, setOrderDetails] = useState(null);
   const router = useRouter();
   const [hasToken, setHasToken] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Added sidebar state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Check for token in localStorage or cookies
     const token = localStorage.getItem('token') || 
                   document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     
     setHasToken(!!token);
+
+    // Check if mobile device
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
-  
-  // Location state
-  const [pickupMapCenter, setPickupMapCenter] = useState({ lat: 25.2048, lng: 55.2708 }); // Dubai coordinates
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setSidebarCollapsed(!sidebarCollapsed);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
+  const [pickupMapCenter, setPickupMapCenter] = useState({ lat: 25.2048, lng: 55.2708 });
   const [dropMapCenter, setDropMapCenter] = useState({ lat: 25.2048, lng: 55.2708 });
   const [pickupMarkerPosition, setPickupMarkerPosition] = useState(null);
   const [dropMarkerPosition, setDropMarkerPosition] = useState(null);
@@ -47,35 +65,24 @@ export default function SendParcel() {
   const dropMarkerRef = useRef(null);
   
   const [formData, setFormData] = useState({
-    // Pickup Location Fields
     pickupBuilding: '',
     pickupApartment: '',
     pickupEmirate: '', 
     pickupArea: '',
     pickupLat: '',
     pickupLng: '',
-    
-    // Drop Location Fields
     dropBuilding: '',
     dropApartment: '',
     dropEmirate: '', 
     dropArea: '',
     dropLat: '',
     dropLng: '',
-    
-    // Contact Fields
     pickupContact: '',
     dropContact: '',
-    
-    // Delivery Options
     deliveryType: 'standard',
     returnType: 'no-return',
-    
-    // Payment
     paymentMethod: 'card',
     amount: 0,
-    
-    // Optional field
     notes: ''
   });
 
@@ -103,23 +110,19 @@ export default function SendParcel() {
       zoom: 14
     });
 
-    // Add marker if position exists
     if (pickupMarkerPosition) {
       pickupMarkerRef.current = new mapboxgl.Marker()
         .setLngLat([pickupMarkerPosition.lng, pickupMarkerPosition.lat])
         .addTo(map);
     }
 
-    // Add click event to set marker
     map.on('click', (e) => {
       const { lng, lat } = e.lngLat;
       
-      // Remove existing marker
       if (pickupMarkerRef.current) {
         pickupMarkerRef.current.remove();
       }
       
-      // Add new marker
       pickupMarkerRef.current = new mapboxgl.Marker()
         .setLngLat([lng, lat])
         .addTo(map);
@@ -131,7 +134,6 @@ export default function SendParcel() {
         pickupLng: lng
       }));
       
-      // Reverse geocode to get address
       reverseGeocode(lng, lat, true);
     });
 
@@ -149,23 +151,19 @@ export default function SendParcel() {
       zoom: 14
     });
 
-    // Add marker if position exists
     if (dropMarkerPosition) {
       dropMarkerRef.current = new mapboxgl.Marker()
         .setLngLat([dropMarkerPosition.lng, dropMarkerPosition.lat])
         .addTo(map);
     }
 
-    // Add click event to set marker
     map.on('click', (e) => {
       const { lng, lat } = e.lngLat;
       
-      // Remove existing marker
       if (dropMarkerRef.current) {
         dropMarkerRef.current.remove();
       }
       
-      // Add new marker
       dropMarkerRef.current = new mapboxgl.Marker()
         .setLngLat([lng, lat])
         .addTo(map);
@@ -177,14 +175,12 @@ export default function SendParcel() {
         dropLng: lng
       }));
       
-      // Reverse geocode to get address
       reverseGeocode(lng, lat, false);
     });
 
     return () => map.remove();
   }, [dropMapCenter]);
 
-  // Reverse geocode coordinates to address
   const reverseGeocode = async (lng, lat, isPickup) => {
     try {
       const response = await fetch(
@@ -218,7 +214,6 @@ export default function SendParcel() {
     }
   };
 
-  // Search for pickup locations
   const searchPickupLocations = async (query) => {
     if (!query) {
       setPickupSearchResults([]);
@@ -237,7 +232,6 @@ export default function SendParcel() {
     }
   };
 
-  // Search for drop locations
   const searchDropLocations = async (query) => {
     if (!query) {
       setDropSearchResults([]);
@@ -256,7 +250,6 @@ export default function SendParcel() {
     }
   };
 
-  // Handle pickup location selection
   const handlePickupLocationSelect = (location) => {
     const [lng, lat] = location.center;
     const emirate = location.context?.find(c => emirates.includes(c.text))?.text || '';
@@ -277,7 +270,6 @@ export default function SendParcel() {
     }));
   };
 
-  // Handle drop location selection
   const handleDropLocationSelect = (location) => {
     const [lng, lat] = location.center;
     const emirate = location.context?.find(c => emirates.includes(c.text))?.text || '';
@@ -298,7 +290,6 @@ export default function SendParcel() {
     }));
   };
 
-  // Handle manual changes (for apartment numbers, etc.)
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -308,7 +299,6 @@ export default function SendParcel() {
   };
 
   const nextStep = () => {
-    // Validate current step before proceeding
     if (step === 1) {
       if (!formData.pickupBuilding || !formData.pickupApartment || !formData.pickupEmirate || !formData.pickupArea ||
           !formData.dropBuilding || !formData.dropApartment || !formData.dropEmirate || !formData.dropArea) {
@@ -324,7 +314,6 @@ export default function SendParcel() {
     
     setError(null);
     
-    // Calculate price before moving to next step
     if (step === 3) {
       const price = calculatePrice();
       setFormData(prev => ({ ...prev, amount: price }));
@@ -342,99 +331,90 @@ export default function SendParcel() {
     } else if (formData.deliveryType === 'express') {
       basePrice = 45;
     } else {
-      basePrice = 20; // default for next-day
+      basePrice = 20; 
     }
     
     if (formData.returnType === 'with-return') {
       basePrice += 10;
     }
-    
+     
     return basePrice;
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-  try {
-    // Get token from storage
-    const token = localStorage.getItem('token') || 
-                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    try {
+      const token = localStorage.getItem('token') || 
+                    document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
-    // Calculate final price 
-    const price = calculatePrice();
-    const orderData = {
-      pickupBuilding: formData.pickupBuilding,
-      pickupApartment: formData.pickupApartment,
-      pickupEmirate: formData.pickupEmirate,
-      pickupArea: formData.pickupArea,
-      pickupLat: formData.pickupLat,
-      pickupLng: formData.pickupLng,
-      dropBuilding: formData.dropBuilding,
-      dropApartment: formData.dropApartment,
-      dropEmirate: formData.dropEmirate,
-      dropArea: formData.dropArea,
-      dropLat: formData.dropLat,
-      dropLng: formData.dropLng,
-      pickupContact: formData.pickupContact,
-      dropContact: formData.dropContact,
-      deliveryType: formData.deliveryType,
-      returnType: formData.returnType,
-      paymentMethod: formData.paymentMethod,
-      amount: price,
-      notes: formData.notes || ''
-    };
+      const price = calculatePrice();
+      const orderData = {
+        pickupBuilding: formData.pickupBuilding,
+        pickupApartment: formData.pickupApartment,
+        pickupEmirate: formData.pickupEmirate,
+        pickupArea: formData.pickupArea,
+        pickupLat: formData.pickupLat,
+        pickupLng: formData.pickupLng,
+        dropBuilding: formData.dropBuilding,
+        dropApartment: formData.dropApartment,
+        dropEmirate: formData.dropEmirate,
+        dropArea: formData.dropArea,
+        dropLat: formData.dropLat,
+        dropLng: formData.dropLng,
+        pickupContact: formData.pickupContact,
+        dropContact: formData.dropContact,
+        deliveryType: formData.deliveryType,
+        returnType: formData.returnType,
+        paymentMethod: formData.paymentMethod,
+        amount: price,
+        notes: formData.notes || ''
+      };
 
-    // Prepare headers
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+      const headers = {
+        'Content-Type': 'application/json',
+      };
 
-    // Add Authorization header if token exists
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create order');
+      }
+
+      setOrderDetails({
+        orderId: data.orderId,
+        trackingNumber: data.trackingNumber
+      });
+      
+      if (formData.paymentMethod === 'cash') {
+        router.push(`/successpay?order_id=${data.orderId}`);
+      } else {
+        router.push(`/payment/${data.orderId}`);
+      }
+      
+    } catch (err) {
+      console.error('Order creation error:', err);
+      setError(err.message || 'Failed to create order. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(orderData)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to create order');
-    }
-
-    // Update state with order details
-    setOrderDetails({
-      orderId: data.orderId,
-      trackingNumber: data.trackingNumber
-    });
-    
-    // Redirect based on payment method
-    if (formData.paymentMethod === 'cash') {
-      // For cash on delivery, go directly to success page with order ID
-      router.push(`/successpay?order_id=${data.orderId}`);
-    } else {
-      // For card payments, go to payment page
-      router.push(`/payment/${data.orderId}`);
-    }
-    
-  } catch (err) {
-    console.error('Order creation error:', err);
-    setError(err.message || 'Failed to create order. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   
   const handleCont = (e) => {
     const { name, value } = e.target;
-    // Remove non-digit characters and limit to 10 digits
     const filtered = value.replace(/\D/g, '').slice(0, 10);
     setFormData((prev) => ({
       ...prev,
@@ -444,11 +424,11 @@ export default function SendParcel() {
 
   return (
     <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
-      {/* Fixed Sidebar/Nav rendering with proper props */}
       {hasToken ? (
         <Sidebar 
           collapsed={sidebarCollapsed} 
-          setCollapsed={setSidebarCollapsed} 
+          setCollapsed={setSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
         />
       ) : (
         <Nav />
@@ -459,23 +439,20 @@ export default function SendParcel() {
         <meta name="description" content="Send parcels across UAE" />
       </Head>
 
-      {/* Main content with proper margins when sidebar is present */}
       <main 
-        className={` className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300 ml-0 ${
+        className={`max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
           hasToken 
             ? sidebarCollapsed 
-              ? 'ml-16' // Collapsed sidebar width
-              : 'ml-64' // Full sidebar width
-            : 'ml-0' // No sidebar
-        }`}
+              ? 'md:ml-16' 
+              : 'md:ml-64' 
+            : 'md:ml-0'
+        } ${isMobile ? 'mt-16' : ''}`}
       >
-        {/* Header */}
         <div className="text-center mb-8 pt-16">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Send a Parcel</h1>
           <p className="text-gray-600">Fast and reliable delivery across UAE</p>
         </div>
 
-        {/* Success/Error Messages */}
         {success && (
           <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
             {success}
@@ -494,7 +471,6 @@ export default function SendParcel() {
           </div>
         )}
 
-        {/* Progress Steps */}
         <div className="mb-10">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -z-10"></div>
@@ -529,8 +505,8 @@ export default function SendParcel() {
           </div>
         </div>
 
-        {/* Form Content */}
         <form onSubmit={handleSubmit} className="bg-white rounded-lg text-black shadow-sm border border-gray-200 overflow-hidden">
+          {/* Step 1: Locations */}
           {step === 1 && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">
@@ -579,7 +555,6 @@ export default function SendParcel() {
                       )}
                     </div>
                     
-                    {/* Map for Pickup Location */}
                     <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
                       <div ref={pickupMapRef} className="w-full h-full" />
                     </div>
@@ -694,7 +669,6 @@ export default function SendParcel() {
                       )}
                     </div>
                     
-                    {/* Map for Drop Location */}
                     <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
                       <div ref={dropMapRef} className="w-full h-full" />
                     </div>
@@ -782,6 +756,7 @@ export default function SendParcel() {
             </div>
           )}
 
+          {/* Step 2: Contacts */}
           {step === 2 && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">
@@ -867,6 +842,7 @@ export default function SendParcel() {
             </div>
           )}
 
+          {/* Step 3: Options */}
           {step === 3 && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">
@@ -875,7 +851,6 @@ export default function SendParcel() {
               </div>
               
               <div className="space-y-4">
-                {/* Delivery Type Selection */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
@@ -942,7 +917,6 @@ export default function SendParcel() {
                   </div>
                 </div>
                 
-                {/* Return Option */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
@@ -988,7 +962,6 @@ export default function SendParcel() {
                   </div>
                 </div>
 
-                {/* Payment Method */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">3</span>
@@ -1016,7 +989,6 @@ export default function SendParcel() {
                   </div>
                 </div>
 
-                {/* Price Summary */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">4</span>
@@ -1072,6 +1044,7 @@ export default function SendParcel() {
             </div>
           )}
 
+          {/* Step 4: Confirm */}
           {step === 4 && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="border-b border-gray-200 pb-4">

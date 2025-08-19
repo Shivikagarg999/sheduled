@@ -97,7 +97,7 @@ export default function Signup() {
                   value={formData[field]}
                   onChange={handleChange}
                   placeholder={`Enter ${field}`}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full p-2 border border-gray-300 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
                   required={field !== 'phone'}
                 />
               </div>

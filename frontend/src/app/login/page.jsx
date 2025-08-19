@@ -123,7 +123,7 @@ const handleGoogleLogin = useGoogleLogin({
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="email@address.com"
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full p-2 border border-gray-300 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
               />
             </div>
@@ -136,7 +136,7 @@ const handleGoogleLogin = useGoogleLogin({
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="password"
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full p-2 border border-gray-300 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
               />
             </div>

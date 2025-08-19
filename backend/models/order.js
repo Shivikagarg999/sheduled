@@ -58,7 +58,14 @@ const orderSchema = new mongoose.Schema({
   driver: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Driver' 
-  }
+  },
+
+  location: {
+  lat: { type: Number },
+  lng: { type: Number },
+  updatedAt: { type: Date, default: Date.now }
+}
+
 });
 
 orderSchema.pre('save', async function (next) {

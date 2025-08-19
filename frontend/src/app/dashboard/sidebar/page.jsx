@@ -25,11 +25,10 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
   const router = useRouter();
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <FiHome /> },
+    { name: 'Home', path: '/', icon: <FiHome /> },
     { name: 'Send Parcel', path: '/send-parcel', icon: <FiPackage /> },
     { name: 'My Orders', path: '/user/orders', icon: <FiPackage /> },
     { name: 'Track Parcel', path: '/track', icon: <FiMap /> },
-    { name: 'Order History', path: '/user/history', icon: <FiClock /> },
     { name: 'Profile', path: '/user/profile', icon: <FiUser /> },
     { name: 'Support', path: '/user/support', icon: <FiHelpCircle /> },
   ];
@@ -169,7 +168,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
           {!collapsed ? (
             <>
               <p>v1.0.0</p>
-              <p className="mt-1">© {new Date().getFullYear()} ParcelX</p>
+              <p className="mt-1">© {new Date().getFullYear()} Sheduled</p>
             </>
           ) : (
             <p>v1</p>
@@ -201,7 +200,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                <h2 className="text-xl font-bold text-blue-600">USER PANEL</h2>
+                
                 <button 
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -263,7 +262,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
 
               <div className="p-4 border-t border-gray-200 text-center text-xs text-gray-500 bg-white">
                 <p>v1.0.0</p>
-                <p className="mt-1">© {new Date().getFullYear()} ParcelX</p>
+                <p className="mt-1">© {new Date().getFullYear()} Sheduled</p>
               </div>
             </motion.div>
           </motion.div>
