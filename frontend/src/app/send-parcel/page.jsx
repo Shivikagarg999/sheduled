@@ -423,721 +423,722 @@ export default function SendParcel() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})` }}>
-      {hasToken ? (
-        <Sidebar 
-          collapsed={sidebarCollapsed} 
-          setCollapsed={setSidebarCollapsed}
-          toggleSidebar={toggleSidebar}
-        />
-      ) : (
-        <Nav />
-      )}
-      
-      <Head>
-        <title>Send Parcel | Delivery App</title>
-        <meta name="description" content="Send parcels across UAE" />
-      </Head>
+    
+<div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url(${bgimg.src})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+  {hasToken ? (
+    <Sidebar 
+      collapsed={sidebarCollapsed} 
+      setCollapsed={setSidebarCollapsed}
+      toggleSidebar={toggleSidebar}
+    />
+  ) : (
+    <Nav />
+  )}
+  
+  <Head>
+    <title>Send Parcel | Delivery App</title>
+    <meta name="description" content="Send parcels across UAE" />
+  </Head>
 
-      <main 
-        className={`max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
-          hasToken 
-            ? sidebarCollapsed 
-              ? 'md:ml-16' 
-              : 'md:ml-64' 
-            : 'md:ml-0'
-        } ${isMobile ? 'mt-16' : ''}`}
-      >
-        <div className="text-center mb-8 pt-16">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Send a Parcel</h1>
-          <p className="text-gray-600">Fast and reliable delivery across UAE</p>
-        </div>
+  <main 
+    className={`w-full max-w-4xl py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
+      hasToken && !isMobile
+        ? sidebarCollapsed 
+          ? 'md:ml-16' 
+          : 'md:ml-64' 
+        : 'mx-auto'
+    } ${isMobile ? 'mt-16' : 'mt-0'}`}
+  >
+    <div className="text-center mb-8 pt-16">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Send a Parcel</h1>
+      <p className="text-gray-600">Fast and reliable delivery across UAE</p>
+    </div>
 
-        {success && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-            {success}
-            {orderDetails && (
-              <div className="mt-2 text-sm">
-                <p>Order ID: {orderDetails.orderId}</p>
-                <p>Tracking Number: {orderDetails.trackingNumber}</p>
-              </div>
-            )}
+    {success && (
+      <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+        {success}
+        {orderDetails && (
+          <div className="mt-2 text-sm">
+            <p>Order ID: {orderDetails.orderId}</p>
+            <p>Tracking Number: {orderDetails.trackingNumber}</p>
           </div>
         )}
+      </div>
+    )}
+    
+    {error && (
+      <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+        {error}
+      </div>
+    )}
+
+    <div className="mb-10">
+      <div className="flex items-center justify-between relative">
+        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -z-10"></div>
+        <div 
+          className="absolute top-1/2 left-0 h-1 bg-blue-600 -z-10 transition-all duration-300" 
+          style={{ width: `${(step-1)*33.33}%` }}
+        ></div>
         
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
+        {[1, 2, 3, 4].map((stepNumber) => (
+          <div key={stepNumber} className="flex flex-col items-center">
+            <button
+              onClick={() => stepNumber < step && setStep(stepNumber)}
+              className={`w-10 h-10 rounded-full flex items-center justify-center
+                ${step === stepNumber ? 'bg-blue-600 text-white border-2 border-blue-600' : 
+                  step > stepNumber ? 'bg-green-100 text-green-600 border-2 border-green-500' : 
+                  'bg-white text-gray-400 border-2 border-gray-300'}`}
+            >
+              {step > stepNumber ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : stepNumber}
+            </button>
+            <span className={`text-xs mt-2 font-medium ${step >= stepNumber ? 'text-gray-900' : 'text-gray-400'}`}>
+              {stepNumber === 1 && 'Locations'}
+              {stepNumber === 2 && 'Contacts'}
+              {stepNumber === 3 && 'Options'}
+              {stepNumber === 4 && 'Confirm'}
+            </span>
           </div>
-        )}
+        ))}
+      </div>
+    </div>
 
-        <div className="mb-10">
-          <div className="flex items-center justify-between relative">
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -z-10"></div>
-            <div 
-              className="absolute top-1/2 left-0 h-1 bg-blue-600 -z-10 transition-all duration-300" 
-              style={{ width: `${(step-1)*33.33}%` }}
-            ></div>
-            
-            {[1, 2, 3, 4].map((stepNumber) => (
-              <div key={stepNumber} className="flex flex-col items-center">
-                <button
-                  onClick={() => stepNumber < step && setStep(stepNumber)}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center
-                    ${step === stepNumber ? 'bg-blue-600 text-white border-2 border-blue-600' : 
-                      step > stepNumber ? 'bg-green-100 text-green-600 border-2 border-green-500' : 
-                      'bg-white text-gray-400 border-2 border-gray-300'}`}
-                >
-                  {step > stepNumber ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : stepNumber}
-                </button>
-                <span className={`text-xs mt-2 font-medium ${step >= stepNumber ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {stepNumber === 1 && 'Locations'}
-                  {stepNumber === 2 && 'Contacts'}
-                  {stepNumber === 3 && 'Options'}
-                  {stepNumber === 4 && 'Confirm'}
-                </span>
+    <form onSubmit={handleSubmit} className="bg-white rounded-lg text-black shadow-sm border border-gray-200 overflow-hidden">
+      {/* Step 1: Locations */}
+      {step === 1 && (
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="border-b border-gray-200 pb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Pickup & Delivery Locations</h2>
+            <p className="text-gray-500 text-sm mt-1">Select addresses on the map or search below</p>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Pickup Location Section */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
+                Pickup Location
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="relative">
+                  <label htmlFor="pickupSearch" className="block text-sm font-medium text-gray-700 mb-1">
+                    Search for pickup location
+                  </label>
+                  <input
+                    type="text"
+                    id="pickupSearch"
+                    value={pickupSearchQuery}
+                    onChange={(e) => {
+                      setPickupSearchQuery(e.target.value);
+                      searchPickupLocations(e.target.value);
+                    }}
+                    onFocus={() => setShowPickupResults(true)}
+                    onBlur={() => setTimeout(() => setShowPickupResults(false), 200)}
+                    className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Search pickup address"
+                  />
+                  {showPickupResults && pickupSearchResults.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
+                      {pickupSearchResults.map((location, index) => (
+                        <div
+                          key={index}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => handlePickupLocationSelect(location)}
+                        >
+                          <div className="font-medium">{location.place_name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
+                  <div ref={pickupMapRef} className="w-full h-full" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="pickupBuilding" className="block text-sm font-medium text-gray-700 mb-1">
+                      Building/Villa
+                    </label>
+                    <input
+                      type="text"
+                      id="pickupBuilding"
+                      name="pickupBuilding"
+                      value={formData.pickupBuilding}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Building name"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="pickupApartment" className="block text-sm font-medium text-gray-700 mb-1">
+                      Apartment/Villa Number
+                    </label>
+                    <input
+                      type="text"
+                      id="pickupApartment"
+                      name="pickupApartment"
+                      value={formData.pickupApartment}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g. 234a"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="pickupEmirate" className="block text-sm font-medium text-gray-700 mb-1">
+                      Emirate
+                    </label>
+                    <input
+                      type="text"
+                      id="pickupEmirate"
+                      name="pickupEmirate"
+                      value={formData.pickupEmirate}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Select emirate"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="pickupArea" className="block text-sm font-medium text-gray-70 mb-1">
+                      Area
+                    </label>
+                    <input
+                      type="text"
+                      id="pickupArea"
+                      name="pickupArea"
+                      value={formData.pickupArea}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter area"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+            
+            {/* Delivery Location Section */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
+                Delivery Location
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="relative">
+                  <label htmlFor="dropSearch" className="block text-sm font-medium text-gray-700 mb-1">
+                    Search for delivery location
+                  </label>
+                  <input
+                    type="text"
+                    id="dropSearch"
+                    value={dropSearchQuery}
+                    onChange={(e) => {
+                      setDropSearchQuery(e.target.value);
+                      searchDropLocations(e.target.value);
+                    }}
+                    onFocus={() => setShowDropResults(true)}
+                    onBlur={() => setTimeout(() => setShowDropResults(false), 200)}
+                    className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Search delivery address"
+                  />
+                  {showDropResults && dropSearchResults.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
+                      {dropSearchResults.map((location, index) => (
+                        <div
+                          key={index}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => handleDropLocationSelect(location)}
+                        >
+                          <div className="font-medium">{location.place_name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
+                  <div ref={dropMapRef} className="w-full h-full" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="dropBuilding" className="block text-sm font-medium text-gray-700 mb-1">
+                      Building/Villa
+                    </label>
+                    <input
+                      type="text"
+                      id="dropBuilding"
+                      name="dropBuilding"
+                      value={formData.dropBuilding}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Building name"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="dropApartment" className="block text-sm font-medium text-gray-700 mb-1">
+                      Apartment/Villa Number
+                    </label>
+                    <input
+                      type="text"
+                      id="dropApartment"
+                      name="dropApartment"
+                      value={formData.dropApartment}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g. 101b"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="dropEmirate" className="block text-sm font-medium text-gray-700 mb-1">
+                      Emirate
+                    </label>
+                    <input
+                      type="text"
+                      id="dropEmirate"
+                      name="dropEmirate"
+                      value={formData.dropEmirate}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Select emirate"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="dropArea" className="block text-sm font-medium text-gray-700 mb-1">
+                      Area
+                    </label>
+                    <input
+                      type="text"
+                      id="dropArea"
+                      name="dropArea"
+                      value={formData.dropArea}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter area"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={nextStep}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Continue to Contacts
+            </button>
           </div>
         </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg text-black shadow-sm border border-gray-200 overflow-hidden">
-          {/* Step 1: Locations */}
-          {step === 1 && (
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Pickup & Delivery Locations</h2>
-                <p className="text-gray-500 text-sm mt-1">Select addresses on the map or search below</p>
-              </div>
-              
-              <div className="space-y-6">
-                {/* Pickup Location Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
-                    Pickup Location
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <label htmlFor="pickupSearch" className="block text-sm font-medium text-gray-700 mb-1">
-                        Search for pickup location
-                      </label>
-                      <input
-                        type="text"
-                        id="pickupSearch"
-                        value={pickupSearchQuery}
-                        onChange={(e) => {
-                          setPickupSearchQuery(e.target.value);
-                          searchPickupLocations(e.target.value);
-                        }}
-                        onFocus={() => setShowPickupResults(true)}
-                        onBlur={() => setTimeout(() => setShowPickupResults(false), 200)}
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Search pickup address"
-                      />
-                      {showPickupResults && pickupSearchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
-                          {pickupSearchResults.map((location, index) => (
-                            <div
-                              key={index}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handlePickupLocationSelect(location)}
-                            >
-                              <div className="font-medium">{location.place_name}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
-                      <div ref={pickupMapRef} className="w-full h-full" />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="pickupBuilding" className="block text-sm font-medium text-gray-700 mb-1">
-                          Building/Villa
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupBuilding"
-                          name="pickupBuilding"
-                          value={formData.pickupBuilding}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Building name"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="pickupApartment" className="block text-sm font-medium text-gray-700 mb-1">
-                          Apartment/Villa Number
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupApartment"
-                          name="pickupApartment"
-                          value={formData.pickupApartment}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g. 234a"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="pickupEmirate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Emirate
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupEmirate"
-                          name="pickupEmirate"
-                          value={formData.pickupEmirate}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Select emirate"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="pickupArea" className="block text-sm font-medium text-gray-700 mb-1">
-                          Area
-                        </label>
-                        <input
-                          type="text"
-                          id="pickupArea"
-                          name="pickupArea"
-                          value={formData.pickupArea}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter area"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Delivery Location Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
-                    Delivery Location
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <label htmlFor="dropSearch" className="block text-sm font-medium text-gray-700 mb-1">
-                        Search for delivery location
-                      </label>
-                      <input
-                        type="text"
-                        id="dropSearch"
-                        value={dropSearchQuery}
-                        onChange={(e) => {
-                          setDropSearchQuery(e.target.value);
-                          searchDropLocations(e.target.value);
-                        }}
-                        onFocus={() => setShowDropResults(true)}
-                        onBlur={() => setTimeout(() => setShowDropResults(false), 200)}
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Search delivery address"
-                      />
-                      {showDropResults && dropSearchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-300 max-h-60 overflow-auto">
-                          {dropSearchResults.map((location, index) => (
-                            <div
-                              key={index}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handleDropLocationSelect(location)}
-                            >
-                              <div className="font-medium">{location.place_name}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="h-64 w-full rounded-md overflow-hidden border border-gray-300">
-                      <div ref={dropMapRef} className="w-full h-full" />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="dropBuilding" className="block text-sm font-medium text-gray-700 mb-1">
-                          Building/Villa
-                        </label>
-                        <input
-                          type="text"
-                          id="dropBuilding"
-                          name="dropBuilding"
-                          value={formData.dropBuilding}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Building name"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="dropApartment" className="block text-sm font-medium text-gray-700 mb-1">
-                          Apartment/Villa Number
-                        </label>
-                        <input
-                          type="text"
-                          id="dropApartment"
-                          name="dropApartment"
-                          value={formData.dropApartment}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g. 101b"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="dropEmirate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Emirate
-                        </label>
-                        <input
-                          type="text"
-                          id="dropEmirate"
-                          name="dropEmirate"
-                          value={formData.dropEmirate}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Select emirate"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="dropArea" className="block text-sm font-medium text-gray-700 mb-1">
-                          Area
-                        </label>
-                        <input
-                          type="text"
-                          id="dropArea"
-                          name="dropArea"
-                          value={formData.dropArea}
-                          onChange={handleChange}
-                          className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter area"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Continue to Contacts
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Contacts */}
-          {step === 2 && (
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Contact Information</h2>
-                <p className="text-gray-500 text-sm mt-1">Who should we contact for pickup and delivery?</p>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
-                    Pickup Contact
-                  </h3>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      id="pickupContact"
-                      inputMode="numeric"  
-                      pattern="\d{1,10}"        
-                      maxLength={10}     
-                      name="pickupContact"
-                      value={formData.pickupContact}
-                      onChange={handleCont}
-                      className="block w-full border border-gray-300 rounded-md py-2 px-3 pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter contact"
-                      required
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
-                    Delivery Contact
-                  </h3>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      id="dropContact"
-                      name="dropContact"
-                      value={formData.dropContact}
-                      onChange={handleCont}
-                      inputMode="numeric"  
-                      pattern="\d{1,10}"        
-                      maxLength={10}  
-                      className="block w-full border border-gray-300 rounded-md py-2 px-3 pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter contact"
-                      required
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+      {/* Step 2: Contacts */}
+      {step === 2 && (
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="border-b border-gray-200 pb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Contact Information</h2>
+            <p className="text-gray-500 text-sm mt-1">Who should we contact for pickup and delivery?</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
+                Pickup Contact
+              </h3>
+              <div className="relative">
+                <input
+                  type="tel"
+                  id="pickupContact"
+                  inputMode="numeric"  
+                  pattern="\d{1,10}"        
+                  maxLength={10}     
+                  name="pickupContact"
+                  value={formData.pickupContact}
+                  onChange={handleChange}
+                  className="block w-full border border-gray-300 rounded-md py-2 px-3 pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter contact"
+                  required
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                   </svg>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Continue to Options
-                </button>
+                </div>
               </div>
             </div>
-          )}
-
-          {/* Step 3: Options */}
-          {step === 3 && (
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Delivery Options</h2>
-                <p className="text-gray-500 text-sm mt-1">Choose your delivery speed and type</p>
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
+                Delivery Contact
+              </h3>
+              <div className="relative">
+                <input
+                  type="tel"
+                  id="dropContact"
+                  name="dropContact"
+                  value={formData.dropContact}
+                  onChange={handleChange}
+                  inputMode="numeric"  
+                  pattern="\d{1,10}"        
+                  maxLength={10}  
+                  className="block w-full border border-gray-300 rounded-md py-2 px-3 pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter contact"
+                  required
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                  </svg>
+                </div>
               </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-between pt-4">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={nextStep}
+              className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Continue to Options
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Options */}
+      {step === 3 && (
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="border-b border-gray-200 pb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Delivery Options</h2>
+            <p className="text-gray-500 text-sm mt-1">Choose your delivery speed and type</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
+                Delivery Type
+              </h3>
               
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">1</span>
-                    Delivery Type
-                  </h3>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'standard' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="standard"
-                          checked={formData.deliveryType === 'standard'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.deliveryType === 'standard' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            Standard (24hr)
-                          </span>
-                          <span className="block text-xs text-gray-500 mt-1">30 AED</span>
-                        </div>
-                      </div>
-                    </label>
-                    
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'express' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="express"
-                          checked={formData.deliveryType === 'express'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.deliveryType === 'express' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            Express (4hr)
-                          </span>
-                          <span className="block text-xs text-gray-500 mt-1">45 AED</span>
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'next-day' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="next-day"
-                          checked={formData.deliveryType === 'next-day'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.deliveryType === 'next-day' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            Next Day
-                          </span>
-                          <span className="block text-xs text-gray-500 mt-1">20 AED</span>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'standard' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      name="deliveryType"
+                      value="standard"
+                      checked={formData.deliveryType === 'standard'}
+                      onChange={handleChange}
+                      className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <div className="ml-2">
+                      <span className={`block text-sm font-medium ${formData.deliveryType === 'standard' ? 'text-blue-700' : 'text-gray-700'}`}>
+                        Standard (24hr)
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-1">30 AED</span>
+                    </div>
+                    </div>
+                </label>
                 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
-                    Return Option
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.returnType === 'no-return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="returnType"
-                          value="no-return"
-                          checked={formData.returnType === 'no-return'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.returnType === 'no-return' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            One-way Delivery
-                          </span>
-                        </div>
-                      </div>
-                    </label>
-                    
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.returnType === 'with-return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="returnType"
-                          value="with-return"
-                          checked={formData.returnType === 'with-return'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.returnType === 'with-return' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            With Return (+10 AED)
-                          </span>
-                        </div>
-                      </div>
-                    </label>
+                <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'express' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      name="deliveryType"
+                      value="express"
+                      checked={formData.deliveryType === 'express'}
+                      onChange={handleChange}
+                      className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <div className="ml-2">
+                      <span className={`block text-sm font-medium ${formData.deliveryType === 'express' ? 'text-blue-700' : 'text-gray-700'}`}>
+                        Express (4hr)
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-1">45 AED</span>
+                    </div>
                   </div>
-                </div>
+                </label>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">3</span>
-                    Payment Method
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
-                      <div className="flex items-start">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="card"
-                          checked={formData.paymentMethod === 'card'}
-                          onChange={handleChange}
-                          className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                        />
-                        <div className="ml-2">
-                          <span className={`block text-sm font-medium ${formData.paymentMethod === 'card' ? 'text-blue-700' : 'text-gray-700'}`}>
-                            Credit/Debit Card
-                          </span>
-                        </div>
-                      </div>
-                    </label>
+                <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.deliveryType === 'next-day' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      name="deliveryType"
+                      value="next-day"
+                      checked={formData.deliveryType === 'next-day'}
+                      onChange={handleChange}
+                      className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <div className="ml-2">
+                      <span className={`block text-sm font-medium ${formData.deliveryType === 'next-day' ? 'text-blue-700' : 'text-gray-700'}`}>
+                        Next Day
+                      </span>
+                                          <span className="block text-xs text-gray-500 mt-1">20 AED</span>
+                    </div>
                   </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">4</span>
-                    Price Summary
-                  </h3>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Base Price:</span>
-                      <span className="font-medium">
-                        {formData.deliveryType === 'standard' && '30 AED'}
-                        {formData.deliveryType === 'express' && '45 AED'}
-                        {formData.deliveryType === 'next-day' && '20 AED'}
+                </label>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">2</span>
+                Return Option
+              </h3>
+              
+              <div className="space-y-2">
+                <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.returnType === 'no-return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      name="returnType"
+                      value="no-return"
+                      checked={formData.returnType === 'no-return'}
+                      onChange={handleChange}
+                      className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <div className="ml-2">
+                      <span className={`block text-sm font-medium ${formData.returnType === 'no-return' ? 'text-blue-700' : 'text-gray-700'}`}>
+                        One-way Delivery
                       </span>
                     </div>
-                    
-                    {formData.returnType === 'with-return' && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Return Fee:</span>
-                        <span className="font-medium">10 AED</span>
-                      </div>
-                    )}
-                    
-                    <div className="border-t border-gray-200 mt-2 pt-2">
-                      <div className="flex justify-between font-bold">
-                        <span>Total:</span>
-                        <span className="text-blue-600">{calculatePrice()} AED</span>
-                      </div>
-                    </div>
                   </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Continue to Review
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Confirm */}
-          {step === 4 && (
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Review & Confirm</h2>
-                <p className="text-gray-500 text-sm mt-1">Review your order details</p>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-medium text-gray-800 mb-3">Order Summary</h3>
+                </label>
                 
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Service:</span>
-                    <span className="font-medium">
-                      {formData.deliveryType === 'standard' && 'Standard Delivery (24hr)'}
-                      {formData.deliveryType === 'express' && 'Express Delivery (4hr)'}
-                      {formData.deliveryType === 'next-day' && 'Next Day Delivery'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Return Option:</span>
-                    <span className="font-medium">
-                      {formData.returnType === 'with-return' ? 'With Return' : 'One-way'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">From:</span>
-                    <span className="font-medium text-right">
-                      {formData.pickupBuilding}, {formData.pickupArea}, {formData.pickupEmirate}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">To:</span>
-                    <span className="font-medium text-right">
-                      {formData.dropBuilding}, {formData.dropArea}, {formData.dropEmirate}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Pickup Contact:</span>
-                    <span className="font-medium">{formData.pickupContact}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery Contact:</span>
-                    <span className="font-medium">{formData.dropContact}</span>
-                  </div>
-                  
-                  <div className="border-t border-gray-200 mt-3 pt-3">
-                    <div className="flex justify-between font-bold">
-                      <span>Total:</span>
-                      <span className="text-blue-600">{calculatePrice()} AED</span>
+                <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.returnType === 'with-return' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      name="returnType"
+                      value="with-return"
+                      checked={formData.returnType === 'with-return'}
+                      onChange={handleChange}
+                      className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <div className="ml-2">
+                      <span className={`block text-sm font-medium ${formData.returnType === 'with-return' ? 'text-blue-700' : 'text-gray-700'}`}>
+                        With Return (+10 AED)
+                      </span>
                     </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">3</span>
+                Payment Method
+              </h3>
+              
+              <div className="space-y-2">
+                <label className={`block p-3 border rounded-md cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-300'}`}>
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={formData.paymentMethod === 'card'}
+                      onChange={handleChange}
+                      className="mt-0.5 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                    />
+                    <div className="ml-2">
+                      <span className={`block text-sm font-medium ${formData.paymentMethod === 'card' ? 'text-blue-700' : 'text-gray-700'}`}>
+                        Credit/Debit Card
+                      </span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-2 text-xs">4</span>
+                Price Summary
+              </h3>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Base Price:</span>
+                  <span className="font-medium">
+                    {formData.deliveryType === 'standard' && '30 AED'}
+                    {formData.deliveryType === 'express' && '45 AED'}
+                    {formData.deliveryType === 'next-day' && '20 AED'}
+                  </span>
+                </div>
+                
+                {formData.returnType === 'with-return' && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Return Fee:</span>
+                    <span className="font-medium">10 AED</span>
+                  </div>
+                )}
+                
+                <div className="border-t border-gray-200 mt-2 pt-2">
+                  <div className="flex justify-between font-bold">
+                    <span>Total:</span>
+                    <span className="text-blue-600">{calculatePrice()} AED</span>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-between pt-4">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={nextStep}
+              className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Continue to Review
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Confirm */}
+      {step === 4 && (
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="border-b border-gray-200 pb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Review & Confirm</h2>
+            <p className="text-gray-500 text-sm mt-1">Review your order details</p>
+          </div>
+          
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-medium text-gray-800 mb-3">Order Summary</h3>
+            
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Service:</span>
+                <span className="font-medium">
+                  {formData.deliveryType === 'standard' && 'Standard Delivery (24hr)'}
+                  {formData.deliveryType === 'express' && 'Express Delivery (4hr)'}
+                  {formData.deliveryType === 'next-day' && 'Next Day Delivery'}
+                </span>
+              </div>
               
-              <div className="flex justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </>
-                  ) : (
-                    `Confirm Order (${calculatePrice()} AED)`
-                  )}
-                </button>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Return Option:</span>
+                <span className="font-medium">
+                  {formData.returnType === 'with-return' ? 'With Return' : 'One-way'}
+                </span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">From:</span>
+                <span className="font-medium text-right">
+                  {formData.pickupBuilding}, {formData.pickupArea}, {formData.pickupEmirate}
+                </span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">To:</span>
+                <span className="font-medium text-right">
+                  {formData.dropBuilding}, {formData.dropArea}, {formData.dropEmirate}
+                </span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">Pickup Contact:</span>
+                <span className="font-medium">{formData.pickupContact}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">Delivery Contact:</span>
+                <span className="font-medium">{formData.dropContact}</span>
+              </div>
+              
+              <div className="border-t border-gray-200 mt-3 pt-3">
+                <div className="flex justify-between font-bold">
+                  <span>Total:</span>
+                  <span className="text-blue-600">{calculatePrice()} AED</span>
+                </div>
               </div>
             </div>
-          )}
-        </form>
-      </main>
-    </div>
+          </div>
+          
+          <div className="flex justify-between pt-4">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Back
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                `Confirm Order (${calculatePrice()} AED)`
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+    </form>
+  </main>
+</div>
   );
 }

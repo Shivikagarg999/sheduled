@@ -16,13 +16,18 @@ import {
   FiX,
   FiLogOut
 } from 'react-icons/fi';
-import Logo from '../../../assets/Logo.png'
+import Logo from '../../../assets/Logo.png';
 import Image from 'next/image';
-
+import { useState, useEffect } from 'react';
 
 const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const menuItems = [
     { name: 'Home', path: '/', icon: <FiHome /> },
@@ -58,9 +63,9 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
   };
 
   const handleLogout = () => {
-    // Remove token from localStorage
-    localStorage.removeItem('token');
-    // Redirect to login page
+    if (isMounted) {
+      localStorage.removeItem('token');
+    }
     router.push('/login');
   };
 
@@ -88,6 +93,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
           <button 
             onClick={() => setCollapsed(!collapsed)}
             className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
               <FiChevronRight className="h-5 w-5" />
@@ -114,13 +120,13 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
                 <Link
                   href={item.path}
                   className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
-                    pathname.startsWith(item.path)
+                    pathname === item.path
                       ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   <span className={`${collapsed ? 'mx-auto' : 'mr-3'} text-lg ${
-                    pathname.startsWith(item.path) ? 'text-blue-600' : 'text-gray-500'
+                    pathname === item.path ? 'text-blue-600' : 'text-gray-500'
                   }`}>
                     {item.icon}
                   </span>
@@ -145,6 +151,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
               <button
                 onClick={handleLogout}
                 className={`flex items-center w-full px-4 py-3 text-sm font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900`}
+                aria-label="Logout"
               >
                 <span className={`${collapsed ? 'mx-auto' : 'mr-3'} text-lg text-gray-500`}>
                   <FiLogOut />
@@ -176,34 +183,61 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
         </div>
       </motion.div>
 
-      {/* Mobile Menu Button */}
-      <button 
-        onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg z-30"
-      >
-        <FiMenu className="h-6 w-6" />
-      </button>
+      {/* Mobile Header with Menu Button */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between z-30 shadow-sm">
+        <Image
+          src={Logo}
+          alt="User Panel Logo"
+          width={120}
+          height={50}
+          className="object-contain"
+          priority
+        />
+        <button 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? (
+            <FiX className="h-6 w-6" />
+          ) : (
+            <FiMenu className="h-6 w-6" />
+          )}
+        </button>
+      </div>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, x: -300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -300 }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="md:hidden fixed inset-0 z-40 bg-black/80"
-            onClick={() => setMobileMenuOpen(false)}
-          >
+          <>
             <motion.div 
-              className="h-full w-4/5 max-w-sm bg-white border-r border-gray-200"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            
+            <motion.div 
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="md:hidden fixed inset-y-0 left-0 w-4/5 max-w-sm bg-white border-r border-gray-200 z-50"
             >
               <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                
+                <Image
+                  src={Logo}
+                  alt="User Panel Logo"
+                  width={120}
+                  height={50}
+                  className="object-contain"
+                />
                 <button 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+                  aria-label="Close menu"
                 >
                   <FiX className="h-6 w-6" />
                 </button>
@@ -213,7 +247,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
                 variants={staggerContainer}
                 initial="hidden"
                 animate="visible"
-                className="py-4 bg-white"
+                className="py-4 bg-white h-[calc(100%-130px)] overflow-y-auto"
               >
                 <ul className="space-y-1">
                   {menuItems.map((item, i) => (
@@ -225,7 +259,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
                       <Link
                         href={item.path}
                         className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
-                          pathname.startsWith(item.path)
+                          pathname === item.path
                             ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         }`}
@@ -260,12 +294,12 @@ const Sidebar = ({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen })
                 </ul>
               </motion.div>
 
-              <div className="p-4 border-t border-gray-200 text-center text-xs text-gray-500 bg-white">
+              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 text-center text-xs text-gray-500 bg-white">
                 <p>v1.0.0</p>
                 <p className="mt-1">© {new Date().getFullYear()} Sheduled</p>
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
