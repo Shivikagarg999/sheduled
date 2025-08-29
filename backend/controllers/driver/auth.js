@@ -68,18 +68,22 @@ exports.signupDriver = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 exports.driverLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "email and password are required" });
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     const driver = await Driver.findOne({ email });
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
+    }
+
+    // Check if driver is verified
+    if (!driver.isVerified) {
+      return res.status(403).json({ message: "Your account is not verified. Please contact support." });
     }
 
     const isMatch = await bcrypt.compare(password, driver.password);
