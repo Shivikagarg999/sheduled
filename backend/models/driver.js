@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -7,10 +6,14 @@ const driverSchema = new mongoose.Schema({
   phone: { type: String, unique: true },
   email: String,
   password: String,
+
+
+  //Orders
   orders: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Order' 
   }],
+  //Location
   location: {
     type: {
       type: String,
@@ -22,8 +25,23 @@ const driverSchema = new mongoose.Schema({
       default: [0, 0]
     }
   },
-  role: { type: String, default: 'driver' }
+  //Boolean Values
+  isAvailable: {
+    type: Boolean,
+    default: false
+  },
+  isVerified:{
+    type: Boolean,
+    default: false
+  },
+  //Documents
+  passport: String,
+  governmentId:String,
+  drivingLicense:String,
+  Mulkiya:String
+
 }, { timestamps: true });
+
 
 driverSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();

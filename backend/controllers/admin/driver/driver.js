@@ -68,7 +68,6 @@ const deleteDriver = async (req, res) => {
   }
 };
 
-
 const assignDriverToOrder = async (req, res) => {
   try {
     const { orderId, driverId } = req.body;
@@ -89,11 +88,32 @@ const assignDriverToOrder = async (req, res) => {
   }
 };
 
+// Get driver's wallet information
+const getWallet = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+    
+    const wallet = await Wallet.findOne({ driver: driverId })
+      .populate('transactions.order');
+    
+    if (!wallet) {
+      // Create wallet if it doesn't exist
+      const newWallet = new Wallet({ driver: driverId });
+      await newWallet.save();
+      return res.json(newWallet);
+    }
+    
+    res.json(wallet);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
   registerDriver,
   getAllDrivers,
   updateDriver,
   deleteDriver,
-  assignDriverToOrder
+  assignDriverToOrder,
+  getWallet
 };

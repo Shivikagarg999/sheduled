@@ -1,17 +1,83 @@
 const Driver = require("../../models/driver");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const Order= require('../../models/order')
+const imagekit = require('../../utils/imagekit');
+const jwt = require('jsonwebtoken');
+const upload= require('../../middleware/upload');
+
+const generateToken = (driverId) => {
+  return jwt.sign({ id: driverId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
+
+exports.signupDriver = async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
+
+    const files = req.files;
+    if (!files || !files.passport || !files.governmentId || !files.drivingLicense || !files.Mulkiya) {
+      return res.status(400).json({ message: 'All documents are required' });
+    }
+
+    const existingDriver = await Driver.findOne({ $or: [{ phone }, { email }] });
+    if (existingDriver) return res.status(400).json({ message: 'Driver with this phone or email already exists' });
+
+    const uploadFile = async (file, folderName) => {
+      const uploadResponse = await imagekit.upload({
+        file: file.buffer.toString('base64'),
+        fileName: `${folderName}_${Date.now()}_${file.originalname}`,
+        folder: '/drivers'
+      });
+      return uploadResponse.url;
+    };
+
+    const passportUrl = await uploadFile(files.passport[0], 'passport');
+    const govtIdUrl = await uploadFile(files.governmentId[0], 'governmentId');
+    const licenseUrl = await uploadFile(files.drivingLicense[0], 'drivingLicense');
+    const mulkiyaUrl = await uploadFile(files.Mulkiya[0], 'mulkiya');
+
+    // Create driver
+    const driver = new Driver({
+      name,
+      email,
+      phone,
+      password,
+      passport: passportUrl,
+      governmentId: govtIdUrl,
+      drivingLicense: licenseUrl,
+      Mulkiya: mulkiyaUrl
+    });
+
+    await driver.save();
+
+    const token = generateToken(driver._id);
+
+    res.status(201).json({
+      message: 'Driver registered successfully',
+      driver: {
+        id: driver._id,
+        name: driver.name,
+        email: driver.email,
+        phone: driver.phone,
+        isVerified: driver.isVerified
+      },
+      token
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 exports.driverLogin = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!phone || !password) {
-      return res.status(400).json({ message: "Phone and password are required" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password are required" });
     }
 
-    const driver = await Driver.findOne({ phone });
+    const driver = await Driver.findOne({ email });
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
     }
@@ -33,7 +99,7 @@ exports.driverLogin = async (req, res) => {
       driver: {
         id: driver._id,
         name: driver.name,
-        phone: driver.phone
+        email: driver.email
       }
     });
   } catch (error) {
