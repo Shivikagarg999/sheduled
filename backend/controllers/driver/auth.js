@@ -110,7 +110,6 @@ exports.driverLogin = async (req, res) => {
     res.status(500).json({ message: "Login failed", error: error.message });
   }
 };
-
 exports.getDriverProfile = async (req, res) => {
   try {
     const driver = await Driver.findById(req.driver.id).select("-password");
@@ -123,7 +122,46 @@ exports.getDriverProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+exports.editDriverProfile = async (req, res) => {
+  try {
+    const { name, email, phone, vehicleNumber } = req.body;
+    const driver = await Driver.findById(req.driver.id);
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
 
+    // Upload profile image if provided
+    if (req.file) {
+      const uploadedImage = await imagekit.upload({
+        file: req.file.buffer, // buffer from multer
+        fileName: `driver_${driver._id}.jpg`
+      });
+      driver.avatar = uploadedImage.url;
+    }
+
+    if (name) driver.name = name;
+    if (email) driver.email = email;
+    if (phone) driver.phone = phone;
+    if (vehicleNumber) driver.vehicleNumber = vehicleNumber;
+
+    await driver.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      driver: {
+        id: driver._id,
+        name: driver.name,
+        email: driver.email,
+        phone: driver.phone,
+        vehicleNumber: driver.vehicleNumber,
+        avatar: driver.avatar
+      }
+    });
+  } catch (err) {
+    console.error("Error updating driver profile:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 exports.getMyOrders = async (req, res) => {
   try {
     const driverId = req.driver.id;

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { driverLogin, getDriverProfile, getMyOrders , signupDriver} = require('../controllers/driver/auth');
+const { driverLogin, getDriverProfile, editDriverProfile, getMyOrders , signupDriver} = require('../controllers/driver/auth');
 const verifyDriverToken = require('../middleware/driverAuth');
 const upload = require('../middleware/upload');
 const driverController = require('../controllers/driver/orders');
@@ -13,6 +13,7 @@ router.post('/signup', upload.fields([
 ]), signupDriver);
 router.post('/login', driverLogin);
 router.get('/profile',verifyDriverToken,getDriverProfile );
+router.put('/profile', verifyDriverToken, upload.single('avatar'), editDriverProfile);
 router.get('/orders', verifyDriverToken, getMyOrders);
 router.get('/orders/available',verifyDriverToken, driverController.getAvailableOrders);
 router.post('/orders/accept',verifyDriverToken, driverController.acceptOrder);

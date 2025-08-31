@@ -7,7 +7,6 @@ const driverSchema = new mongoose.Schema({
   email: String,
   password: String,
 
-
   //Orders
   orders: [{ 
     type: mongoose.Schema.Types.ObjectId, 
@@ -38,7 +37,13 @@ const driverSchema = new mongoose.Schema({
   passport: String,
   governmentId:String,
   drivingLicense:String,
-  Mulkiya:String
+  Mulkiya:String,
+
+
+  avatar: {
+  type: String,
+  default: ""
+},
 
 }, { timestamps: true });
 
