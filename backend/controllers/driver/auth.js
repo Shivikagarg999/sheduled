@@ -178,3 +178,23 @@ exports.getMyOrders = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+exports.toggleAvailability = async (req, res) => {
+  try {
+    const driver = await Driver.findById(req.driver.id);
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    // Toggle availability
+    driver.isAvailable = !driver.isAvailable;
+    await driver.save();
+
+    res.status(200).json({
+      message: `Availability updated to ${driver.isAvailable}`,
+      isAvailable: driver.isAvailable
+    });
+  } catch (err) {
+    console.error("Error toggling availability:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
