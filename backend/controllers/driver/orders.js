@@ -1,5 +1,6 @@
 const Driver = require("../../models/driver");
 const Order = require('../../models/order');
+const Transaction = require('../../models/transactions');
 
 // Get available orders for driver
 exports.getAvailableOrders = async (req, res) => {
@@ -77,42 +78,43 @@ exports.markAsDelivered = async (req, res) => {
   try {
     const { orderId } = req.body;
     const driverId = req.driver.id;
-    
-    // Find the order and driver
+
     const order = await Order.findById(orderId).populate('user');
     const driver = await Driver.findById(driverId);
-    
+
     if (!order || !driver) {
       return res.status(404).json({ message: 'Order or driver not found' });
     }
-    
-    // Verify the driver is assigned to this order
+
     if (order.driver.toString() !== driverId) {
       return res.status(403).json({ message: 'Driver not assigned to this order' });
     }
-    
-    // Check if order is already delivered
+
     if (order.status === 'delivered') {
       return res.status(400).json({ message: 'Order already marked as delivered' });
     }
-    
-    // Update order status
+
     order.status = 'delivered';
     order.updatedAt = new Date();
     await order.save();
-    
-    // Calculate 30% of the order amount
+
+    // Calculate 30% earnings
     const driverEarnings = (order.amount * 0.30).toFixed(2);
-    
-    // Add to driver's total earnings
+
+    // Update driver's total earnings
     driver.earnings = (parseFloat(driver.earnings || 0) + parseFloat(driverEarnings)).toFixed(2);
-    
-    // Mark driver as available again
     driver.isAvailable = true;
     await driver.save();
-    
-    res.json({ 
-      message: 'Order marked as delivered successfully', 
+
+    // ✅ Add transaction record
+    await Transaction.create({
+      driver: driver._id,
+      order: order._id,
+      amount: driverEarnings
+    });
+
+    res.json({
+      message: 'Order marked as delivered successfully',
       earningsAdded: driverEarnings,
       totalEarnings: driver.earnings
     });
@@ -137,6 +139,35 @@ exports.getCurrentOrders = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.getTransactionHistory = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const transactions = await Transaction.find({ driver: driverId })
+      .populate('order', 'trackingNumber amount status')
+      .sort({ date: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await Transaction.countDocuments({ driver: driverId });
+
+    res.status(200).json({
+      message: 'Transaction history fetched successfully',
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalTransactions: total,
+      transactions
+    });
+  } catch (error) {
+    console.error('Error fetching transaction history:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
 
 // Helper function to calculate driver earnings
 function calculateDriverEarnings(orderAmount) {
