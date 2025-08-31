@@ -1,6 +1,5 @@
 const Driver = require("../../models/driver");
 const Order = require('../../models/order');
-const Wallet = require('../../models/wallet');
 
 // Get available orders for driver
 exports.getAvailableOrders = async (req, res) => {
@@ -134,24 +133,6 @@ exports.getCurrentOrders = async (req, res) => {
     }).populate('user', 'name phone');
     
     res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.getWallet = async (req, res) => {
-  try {
-    const driverId = req.driver.id;
-
-    let wallet = await Wallet.findOne({ driver: driverId })
-      .populate("transactions.order");
-
-    if (!wallet) {
-      wallet = new Wallet({ driver: driverId });
-      await wallet.save();
-    }
-
-    res.json(wallet);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
