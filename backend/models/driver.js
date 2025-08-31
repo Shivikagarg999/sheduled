@@ -39,6 +39,7 @@ const driverSchema = new mongoose.Schema({
   drivingLicense:String,
   Mulkiya:String,
 
+  earnings: String,
 
   avatar: {
   type: String,

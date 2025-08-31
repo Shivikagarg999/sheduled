@@ -100,14 +100,13 @@ exports.markAsDelivered = async (req, res) => {
     // Update order status
     order.status = 'delivered';
     order.updatedAt = new Date();
-    
     await order.save();
     
-    // Calculate driver's earnings
-    const driverEarnings = calculateDriverEarnings(order.amount);
+    // Calculate 30% of the order amount
+    const driverEarnings = (order.amount * 0.30).toFixed(2);
     
-    // Credit earnings to driver's wallet
-    await creditToWallet(driverId, driverEarnings, orderId);
+    // Add to driver's total earnings
+    driver.earnings = (parseFloat(driver.earnings || 0) + parseFloat(driverEarnings)).toFixed(2);
     
     // Mark driver as available again
     driver.isAvailable = true;
@@ -115,9 +114,11 @@ exports.markAsDelivered = async (req, res) => {
     
     res.json({ 
       message: 'Order marked as delivered successfully', 
-      earnings: driverEarnings 
+      earningsAdded: driverEarnings,
+      totalEarnings: driver.earnings
     });
   } catch (error) {
+    console.error("Error in markAsDelivered:", error);
     res.status(500).json({ message: error.message });
   }
 };
