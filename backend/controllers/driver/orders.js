@@ -146,7 +146,7 @@ exports.getTransactionHistory = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
     const transactions = await Transaction.find({ driver: driverId })
-      .populate('order', 'trackingNumber amount status')
+      .populate('order')
       .sort({ date: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
