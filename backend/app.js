@@ -6,11 +6,12 @@ const cors = require('cors');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
-const driverRoutes = require('./routes/driverRoutes')
-const adminAuthRoutes = require('./routes/admin/auth')
-const adminUserRoutes = require('./routes/admin/user')
-const adminOrderRoutes = require('./routes/admin/order')
-const adminDriverRoutes = require('./routes/admin/driver')
+const driverRoutes = require('./routes/driverRoutes');
+const supportRoutes = require('./routes/supportQueryRoutes');
+const adminAuthRoutes = require('./routes/admin/auth');
+const adminUserRoutes = require('./routes/admin/user');
+const adminOrderRoutes = require('./routes/admin/order');
+const adminDriverRoutes = require('./routes/admin/driver');
 
 const app = express();
 
@@ -43,7 +44,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ MongoDB connection
+//MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -51,22 +52,23 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB connected'))
 .catch(err => console.error('❌ Connection error:', err));
 
-// ✅ Test route
+//Test route
 app.get('/', (req, res) => {
   res.send('App is running.');
 });
 
-// ✅ Routes
+//Routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/pay', paymentRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/driver',  driverRoutes);
+app.use('/api/support', supportRoutes);
 app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin/user', adminUserRoutes)
 app.use('/api/admin/order', adminOrderRoutes)
 app.use('/api/admin/driver', adminDriverRoutes)
 
-// ✅ Start server
+//Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
