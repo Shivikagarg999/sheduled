@@ -95,15 +95,18 @@ exports.markAsDelivered = async (req, res) => {
       return res.status(400).json({ message: 'Order already marked as delivered' });
     }
 
+    // ✅ Mark delivered
     order.status = 'delivered';
     order.updatedAt = new Date();
     await order.save();
 
-    // Calculate 30% earnings
+    // ✅ Calculate 30% earnings
     const driverEarnings = (order.amount * 0.30).toFixed(2);
 
-    // Update driver's total earnings
-    driver.earnings = (parseFloat(driver.earnings || 0) + parseFloat(driverEarnings)).toFixed(2);
+    // ✅ Update driver's earnings
+    driver.earnings = (
+      parseFloat(driver.earnings || 0) + parseFloat(driverEarnings)
+    ).toFixed(2);
     driver.isAvailable = true;
     await driver.save();
 
@@ -114,11 +117,14 @@ exports.markAsDelivered = async (req, res) => {
       amount: driverEarnings
     });
 
+    // ✅ Send entire order in response
     res.json({
       message: 'Order marked as delivered successfully',
       earningsAdded: driverEarnings,
-      totalEarnings: driver.earnings
+      totalEarnings: driver.earnings,
+      order,  // 👈 this includes full order data (with populated user)
     });
+
   } catch (error) {
     console.error("Error in markAsDelivered:", error);
     res.status(500).json({ message: error.message });
@@ -166,9 +172,6 @@ exports.getTransactionHistory = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-
-
 
 // Helper function to calculate driver earnings
 function calculateDriverEarnings(orderAmount) {
