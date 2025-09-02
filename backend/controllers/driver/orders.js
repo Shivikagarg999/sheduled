@@ -20,6 +20,7 @@ exports.getAvailableOrders = async (req, res) => {
     const availableOrders = await Order.find({
       driver: null,
       status: "pending",
+      paymentStatus: "completed"
     }).populate("user", "name phone");
 
     res.json({
