@@ -113,7 +113,7 @@ exports.markAsDelivered = async (req, res) => {
     // ✅ Add transaction record
     await Transaction.create({
       driver: driver._id,
-      order: order._id,
+      order: order.trackingNumber,
       amount: driverEarnings
     });
 
@@ -122,7 +122,7 @@ exports.markAsDelivered = async (req, res) => {
       message: 'Order marked as delivered successfully',
       earningsAdded: driverEarnings,
       totalEarnings: driver.earnings,
-      order,  // 👈 this includes full order data (with populated user)
+      order, 
     });
 
   } catch (error) {
