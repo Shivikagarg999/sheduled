@@ -101,16 +101,15 @@ export default function Nav() {
 
         {/* Right Side */}
         <div className="flex items-center space-x-4">
-          <motion.div
-            whileHover={buttonHover}
-            whileTap={buttonTap}
-            className="hidden sm:flex items-center space-x-1 border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-700 hover:border-blue-400 transition-colors cursor-pointer group"
-          >
-            <FaGlobe className="text-blue-600 group-hover:text-blue-700 transition-colors" />
-            <span>EN</span>
-            <FaChevronDown className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors" />
-          </motion.div>
-
+           <Link href="/support">
+            <motion.button
+              whileHover={buttonHover}
+              whileTap={buttonTap}
+              className="hidden sm:block text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors px-3 py-1.5 rounded-full hover:bg-blue-50"
+            >
+              Ask Support
+            </motion.button>
+          </Link>
           <Link href="/login">
             <motion.button
               whileHover={buttonHover}
@@ -193,8 +192,8 @@ export default function Nav() {
                   whileTap={buttonTap}
                   className="flex items-center justify-center space-x-1 border border-gray-200 rounded-full px-3 py-2 text-sm text-gray-700 hover:border-blue-400 transition-colors cursor-pointer group my-2"
                 >
-                  <FaGlobe className="text-blue-600 group-hover:text-blue-700 transition-colors" />
-                  <span>EN</span>
+    
+                  
                   <FaChevronDown className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors" />
                 </motion.div>
 
