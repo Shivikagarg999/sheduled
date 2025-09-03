@@ -16,23 +16,6 @@ const withdrawalSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'completed'],
     default: 'pending'
   },
-  // Bank account details
-  accountHolderName: {
-    type: String,
-    required: true
-  },
-  accountNumber: {
-    type: String,
-    required: true
-  },
-  iban: {
-    type: String,
-    required: true
-  },
-  bankName: {
-    type: String,
-    required: true
-  },
   transaction: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Transaction'

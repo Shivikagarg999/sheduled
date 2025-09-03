@@ -7,7 +7,6 @@ const auth = require('../middleware/driverAuth');
 router.put('/bank-details', auth, withdrawalController.updateBankDetails);
 router.get('/bank-details', auth, withdrawalController.getBankDetails);
 
-
 // Driver routes
 router.post('/request', auth, withdrawalController.requestWithdrawal);
 router.get('/history', auth, withdrawalController.getWithdrawalHistory);

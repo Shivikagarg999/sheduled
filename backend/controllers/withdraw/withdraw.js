@@ -64,7 +64,7 @@ exports.getBankDetails = async (req, res) => {
   }
 };
 
-// Request a withdrawal (updated to use stored bank details)
+// Request a withdrawal
 exports.requestWithdrawal = async (req, res) => {
   try {
     const driverId = req.driver.id;
@@ -115,14 +115,10 @@ exports.requestWithdrawal = async (req, res) => {
     driver.earnings = (currentEarnings - amount).toFixed(2);
     await driver.save();
 
-    // Create withdrawal request using stored bank details
+    // Create withdrawal request (without bank details in the withdrawal document)
     const withdrawal = new Withdrawal({
       driver: driverId,
       amount,
-      accountHolderName: driver.bankDetails.accountHolderName,
-      accountNumber: driver.bankDetails.accountNumber,
-      iban: driver.bankDetails.iban,
-      bankName: driver.bankDetails.bankName,
       status: 'pending'
     });
 
@@ -150,8 +146,6 @@ exports.requestWithdrawal = async (req, res) => {
         _id: withdrawal._id,
         amount: withdrawal.amount,
         status: withdrawal.status,
-        accountHolderName: withdrawal.accountHolderName,
-        bankName: withdrawal.bankName,
         createdAt: withdrawal.createdAt
       },
       transaction: {
