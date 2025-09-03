@@ -23,11 +23,24 @@ exports.getAvailableOrders = async (req, res) => {
       paymentStatus: "completed"
     }).populate("user", "name phone");
 
+    // Calculate 30% of total amount for each order
+    const ordersWithDriverShare = availableOrders.map(order => {
+      const orderObj = order.toObject();
+      const totalAmount = order.totalAmount || 0;
+      const driverShare = totalAmount * 0.3;
+      
+      return {
+        ...orderObj,
+        driverShare: parseFloat(driverShare.toFixed(2)), 
+        originalTotalAmount: totalAmount 
+      };
+    });
+ 
     res.json({
       success: true,
       message: "Available orders fetched successfully",
-      totalOrders: availableOrders.length,
-      orders: availableOrders,
+      totalOrders: ordersWithDriverShare.length,
+      orders: ordersWithDriverShare,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -9,6 +9,10 @@ router.get('/history', auth, withdrawalController.getWithdrawalHistory);
 router.get('/info', auth, withdrawalController.getWithdrawalInfo);
 router.get('/:id', auth, withdrawalController.getWithdrawalById);
 
+// Bank details routes
+router.put('/bank-details', auth, withdrawalController.updateBankDetails);
+router.get('/bank-details', auth, withdrawalController.getBankDetails);
+
 // Admin routes
 router.get('/admin/withdrawals', withdrawalController.getAllWithdrawals);
 router.get('/admin/withdrawals/:id', withdrawalController.getWithdrawalDetails);

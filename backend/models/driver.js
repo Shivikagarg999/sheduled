@@ -40,7 +40,7 @@ const driverSchema = new mongoose.Schema({
   Mulkiya:String,
 
   earnings: {
-    type: String,
+    type: Number,
     default: 0
   },
 
@@ -48,7 +48,13 @@ const driverSchema = new mongoose.Schema({
   type: String,
   default: ""
 },
-
+    bankDetails: {
+    accountHolderName: String,
+    accountNumber: String,
+    iban: String,
+    bankName: String,
+    updatedAt: Date
+  }
 }, { timestamps: true });
 
 

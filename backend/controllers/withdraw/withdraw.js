@@ -2,21 +2,77 @@ const Withdrawal = require('../../models/withdraw');
 const Transaction = require('../../models/transactions');
 const Driver = require('../../models/driver');
 
-// Request a withdrawal
-exports.requestWithdrawal = async (req, res) => {
+// Update driver's bank details
+exports.updateBankDetails = async (req, res) => {
   try {
     const driverId = req.driver.id;
     const { 
-      amount, 
       accountHolderName, 
       accountNumber, 
       iban, 
       bankName 
     } = req.body;
 
-    if (!amount || !accountHolderName || !accountNumber || !iban || !bankName) {
+    if (!accountHolderName || !accountNumber || !iban || !bankName) {
       return res.status(400).json({ 
-        message: 'All fields are required: amount, accountHolderName, accountNumber, iban, bankName' 
+        message: 'All fields are required: accountHolderName, accountNumber, iban, bankName' 
+      });
+    }
+
+    const driver = await Driver.findByIdAndUpdate(
+      driverId,
+      {
+        bankDetails: {
+          accountHolderName,
+          accountNumber,
+          iban,
+          bankName,
+          updatedAt: new Date()
+        }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: 'Bank details updated successfully',
+      bankDetails: driver.bankDetails
+    });
+
+  } catch (error) {
+    console.error('Bank details update error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get driver's bank details
+exports.getBankDetails = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+    
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    res.status(200).json({
+      message: 'Bank details fetched successfully',
+      bankDetails: driver.bankDetails || null
+    });
+  } catch (error) {
+    console.error('Error fetching bank details:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Request a withdrawal (updated to use stored bank details)
+exports.requestWithdrawal = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+    const { amount } = req.body;
+
+    if (!amount) {
+      return res.status(400).json({ 
+        message: 'Amount is required' 
       });
     }
 
@@ -25,10 +81,17 @@ exports.requestWithdrawal = async (req, res) => {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
     }
 
-    // Get driver and check balance
+    // Get driver and check balance and bank details
     const driver = await Driver.findById(driverId);
     if (!driver) {
       return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    // Check if bank details are set
+    if (!driver.bankDetails || !driver.bankDetails.accountHolderName) {
+      return res.status(400).json({ 
+        message: 'Bank details not set. Please update your bank details before requesting a withdrawal.' 
+      });
     }
 
     const currentEarnings = parseFloat(driver.earnings || 0);
@@ -52,14 +115,14 @@ exports.requestWithdrawal = async (req, res) => {
     driver.earnings = (currentEarnings - amount).toFixed(2);
     await driver.save();
 
-    // Create withdrawal request
+    // Create withdrawal request using stored bank details
     const withdrawal = new Withdrawal({
       driver: driverId,
       amount,
-      accountHolderName,
-      accountNumber,
-      iban,
-      bankName,
+      accountHolderName: driver.bankDetails.accountHolderName,
+      accountNumber: driver.bankDetails.accountNumber,
+      iban: driver.bankDetails.iban,
+      bankName: driver.bankDetails.bankName,
       status: 'pending'
     });
 
@@ -71,7 +134,7 @@ exports.requestWithdrawal = async (req, res) => {
       withdrawal: withdrawal._id,
       amount: -amount, // Negative amount for withdrawal
       type: 'debit',
-      description: `Withdrawal request #${withdrawal._id} to ${bankName}`,
+      description: `Withdrawal request #${withdrawal._id} to ${driver.bankDetails.bankName}`,
       status: 'completed' // Mark as completed since amount is already deducted
     });
 
@@ -105,7 +168,6 @@ exports.requestWithdrawal = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 // Get driver's withdrawal history
 exports.getWithdrawalHistory = async (req, res) => {
   try {
