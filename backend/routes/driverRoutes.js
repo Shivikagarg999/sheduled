@@ -20,6 +20,7 @@ router.put('/profile', verifyDriverToken, upload.single('avatar'), editDriverPro
 router.get('/orders', verifyDriverToken, getMyOrders);
 router.get('/orders/available',verifyDriverToken, driverController.getAvailableOrders);
 router.post('/orders/accept',verifyDriverToken, driverController.acceptOrder);
+router.get('/orders/ongoing', verifyDriverToken, driverController.getOngoingOrders);
 router.post('/orders/deliver',verifyDriverToken, driverController.markAsDelivered);
 router.get('/orders/current', driverController.getCurrentOrders);
 // earnings and transactions

@@ -31,8 +31,8 @@ exports.getAvailableOrders = async (req, res) => {
 
       return {
         ...orderObj,
-        amount: driverShare,                 // overwrite amount with 30%
-        originalTotalAmount: totalAmount     // keep original if needed
+        amount: driverShare,
+        originalTotalAmount: totalAmount
       };
     });
 
@@ -140,6 +140,24 @@ exports.markAsDelivered = async (req, res) => {
 
   } catch (error) {
     console.error("Error in markAsDelivered:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getOngoingOrders = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+
+    const ongoingOrders = await Order.find({
+      driver: driverId,
+      status: { $in: ["accepted", "picked_up", "in_transit"] } 
+    })
+    .populate("user")
+    .populate("driver")      
+    .sort({ createdAt: -1 });
+
+    res.json({ ongoingOrders });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
