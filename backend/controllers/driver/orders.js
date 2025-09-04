@@ -150,17 +150,27 @@ exports.getOngoingOrders = async (req, res) => {
 
     const ongoingOrders = await Order.find({
       driver: driverId,
-      status: { $in: ["accepted", "picked_up", "in_transit"] } 
+      status: { $in: ["accepted", "picked_up", "in_transit"] }
     })
-    .populate("user")
-    .populate("driver")      
-    .sort({ createdAt: -1 });
+      .populate("user")
+      .populate("driver")
+      .sort({ createdAt: -1 });
 
-    res.json({ ongoingOrders });
+    // Modify amount to 30%
+    const modifiedOrders = ongoingOrders.map(order => {
+      const orderObj = order.toObject(); 
+      if (orderObj.amount) {
+        orderObj.amount = orderObj.amount * 0.3;
+      }
+      return orderObj;
+    });
+
+    res.json({ ongoingOrders: modifiedOrders });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Get driver's current orders
 exports.getCurrentOrders = async (req, res) => {
