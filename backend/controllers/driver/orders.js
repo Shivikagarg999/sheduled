@@ -123,12 +123,12 @@ exports.markAsDelivered = async (req, res) => {
     driver.isAvailable = true;
     await driver.save();
 
-    // ✅ Add transaction record
-    await Transaction.create({
-      driver: driver._id,
-      order: order.trackingNumber,
-      amount: driverEarnings
-    });
+   await Transaction.create({
+  driver: driver._id,
+  order: order._id, 
+  trackingNumber: order.trackingNumber, 
+  amount: driverEarnings
+});
 
     // ✅ Send entire order in response
     res.json({
