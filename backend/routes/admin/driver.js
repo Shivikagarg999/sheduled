@@ -5,15 +5,18 @@ const {
   getAllDrivers,
   updateDriver,
   deleteDriver,
-  assignDriverToOrder
+  assignDriverToOrder,
+  markDriverAsVerified,
+  getDriverById
 } = require('../../controllers/admin/driver/driver');
 
 // 🚚 DRIVER CRUD
 router.post('/create-driver', registerDriver);
-router.get('/drivers', getAllDrivers);
+router.get('/all', getAllDrivers);
+router.get('/driver/:driverId', getDriverById);
+router.put('/verify-driver/:driverId', markDriverAsVerified);
 router.put('/update-driver/:id', updateDriver);
 router.delete('/delete-driver/:id', deleteDriver);
-router.get('/', getAllDrivers)
 
 // 📦 ASSIGN DRIVER TO ORDER
 router.post('/assign-driver', assignDriverToOrder);

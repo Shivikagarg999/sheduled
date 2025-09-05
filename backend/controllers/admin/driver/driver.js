@@ -1,31 +1,100 @@
 const Driver = require('../../../models/driver');
 const Order = require('../../../models/order');
+const imagekit = require('../../../utils/imagekit');
 
-// 🟢 Create driver
+// ✅ Admin Signup Driver (Auto-Verified)
 const registerDriver = async (req, res) => {
   try {
-    const { name, phone, password } = req.body;
+    const { name, email, phone, password } = req.body;
+    const files = req.files;
 
-    if (!name || !phone || !password) {
+    if (!name || !email || !phone || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const existing = await Driver.findOne({ phone });
-    if (existing) return res.status(400).json({ message: 'Driver already exists' });
+    if (!files || !files.passport || !files.governmentId || !files.drivingLicense || !files.Mulkiya) {
+      return res.status(400).json({ message: 'All documents are required' });
+    }
 
-    const driver = new Driver({ name, phone, password });
+    const existingDriver = await Driver.findOne({ $or: [{ phone }, { email }] });
+    if (existingDriver) {
+      return res.status(400).json({ message: 'Driver with this phone or email already exists' });
+    }
+
+    // Helper function for uploading files
+    const uploadFile = async (file, folderName) => {
+      const uploadResponse = await imagekit.upload({
+        file: file.buffer.toString('base64'),
+        fileName: `${folderName}_${Date.now()}_${file.originalname}`,
+        folder: '/drivers'
+      });
+      return uploadResponse.url;
+    };
+
+    // Upload all documents
+    const passportUrl = await uploadFile(files.passport[0], 'passport');
+    const govtIdUrl = await uploadFile(files.governmentId[0], 'governmentId');
+    const licenseUrl = await uploadFile(files.drivingLicense[0], 'drivingLicense');
+    const mulkiyaUrl = await uploadFile(files.Mulkiya[0], 'mulkiya');
+
+    // Create driver (auto-verified ✅)
+    const driver = new Driver({
+      name,
+      email,
+      phone,
+      password,
+      passport: passportUrl,
+      governmentId: govtIdUrl,
+      drivingLicense: licenseUrl,
+      Mulkiya: mulkiyaUrl,
+      isVerified: true // auto verified since admin creates it
+    });
+
     await driver.save();
+
+    const token = generateToken(driver._id);
 
     res.status(201).json({
       message: 'Driver registered successfully',
       driver: {
-        _id: driver._id,
+        id: driver._id,
         name: driver.name,
-        phone: driver.phone
-      }
+        email: driver.email,
+        phone: driver.phone,
+        isVerified: driver.isVerified,
+        passport: driver.passport,
+        governmentId: driver.governmentId,
+        drivingLicense: driver.drivingLicense,
+        Mulkiya: driver.Mulkiya
+      },
+      token
     });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Mark as verified 
+const markDriverAsVerified = async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    driver.isVerified = true;
+    await driver.save();
+
+    res.status(200).json({
+      message: 'Driver marked as verified successfully',
+      driver,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
@@ -51,6 +120,22 @@ const updateDriver = async (req, res) => {
     res.json({ message: 'Driver updated', driver });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ✅ Get Driver by ID
+const getDriverById = async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    res.status(200).json(driver);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
@@ -113,7 +198,9 @@ module.exports = {
   registerDriver,
   getAllDrivers,
   updateDriver,
+  getDriverById,
   deleteDriver,
   assignDriverToOrder,
+  markDriverAsVerified,
   getWallet
 };
