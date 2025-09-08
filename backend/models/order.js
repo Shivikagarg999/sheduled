@@ -1,7 +1,7 @@
+// models/Order.js
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-
   user: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
@@ -56,18 +56,42 @@ const orderSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
   
   notes: String,
+  
+  // Driver information
   driver: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Driver' 
   },
-
-  location: {
-  lat: { type: Number },
-  lng: { type: Number },
-  updatedAt: { type: Date, default: Date.now }
-}
+  
+  // Delivery boy location tracking (GeoJSON format)
+  deliveryBoyLocation: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      default: [0, 0]
+    },
+    address: String,
+    updatedAt: { type: Date, default: Date.now }
+  },
+  
+  // Estimated time of arrival
+  eta: { type: String },
+  
+  // Driver details for quick access
+  driverDetails: {
+    name: String,
+    phone: String,
+    vehicleNumber: String
+  }
 
 });
+
+// Create geospatial index for delivery boy location
+orderSchema.index({ deliveryBoyLocation: '2dsphere' });
 
 orderSchema.pre('save', async function (next) {
   if (this.trackingNumber) return next();
@@ -90,6 +114,12 @@ orderSchema.pre('save', async function (next) {
   } catch (err) {
     next(err);
   }
+});
+
+// Update the updatedAt field before saving
+orderSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 const Order = mongoose.model('Order', orderSchema);

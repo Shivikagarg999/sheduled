@@ -1,3 +1,4 @@
+// models/Driver.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -7,12 +8,13 @@ const driverSchema = new mongoose.Schema({
   email: String,
   password: String,
 
-  //Orders
+  // Orders
   orders: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Order' 
   }],
-  //Location
+  
+  // Location (GeoJSON format)
   location: {
     type: {
       type: String,
@@ -20,24 +22,34 @@ const driverSchema = new mongoose.Schema({
       default: 'Point'
     },
     coordinates: {
-      type: [Number],
+      type: [Number], // [longitude, latitude]
       default: [0, 0]
-    }
+    },
+    updatedAt: { type: Date, default: Date.now }
   },
-  //Boolean Values
+  
+  // Current active order
+  currentOrder: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    default: null
+  },
+  
+  // Boolean Values
   isAvailable: {
     type: Boolean,
     default: false
   },
-  isVerified:{
+  isVerified: {
     type: Boolean,
     default: false
   },
-  //Documents
+  
+  // Documents
   passport: String,
-  governmentId:String,
-  drivingLicense:String,
-  Mulkiya:String,
+  governmentId: String,
+  drivingLicense: String,
+  Mulkiya: String,
 
   earnings: {
     type: Number,
@@ -45,18 +57,33 @@ const driverSchema = new mongoose.Schema({
   },
 
   avatar: {
-  type: String,
-  default: ""
-},
-    bankDetails: {
+    type: String,
+    default: ""
+  },
+  
+  bankDetails: {
     accountHolderName: String,
     accountNumber: String,
     iban: String,
     bankName: String,
     updatedAt: Date
+  },
+  
+  // Socket ID for real-time communication
+  socketId: String,
+  
+  // Vehicle information
+  vehicle: {
+    type: String,
+    number: String,
+    model: String,
+    color: String
   }
+
 }, { timestamps: true });
 
+// Create geospatial index for location
+driverSchema.index({ location: '2dsphere' });
 
 driverSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
@@ -66,6 +93,13 @@ driverSchema.pre('save', async function (next) {
 
 driverSchema.methods.matchPassword = function (password) {
   return bcrypt.compare(password, this.password);
+};
+
+// Update location method
+driverSchema.methods.updateLocation = function(lng, lat) {
+  this.location.coordinates = [lng, lat];
+  this.location.updatedAt = new Date();
+  return this.save();
 };
 
 module.exports = mongoose.model('Driver', driverSchema);

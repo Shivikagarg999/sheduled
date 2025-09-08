@@ -5,13 +5,30 @@ import { motion } from 'framer-motion';
 import bgimg from "../../../public/images/bg.png";
 import Nav from '../nav/page';
 import Sidebar from '../dashboard/sidebar/page';
+import { io } from "socket.io-client";
 
 export default function EnterTrackingPage() {
   const [trackingId, setTrackingId] = useState('');
   const [hasToken, setHasToken] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const router = useRouter();
+    useEffect(() => {
+    const socket = io("http://localhost:5000");
 
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+
+      socket.emit("join", { userId: "1234" });
+      socket.on("message", (data)=>{
+        console.log(data)
+      });
+    });
+
+    // cleanup jab component unmount ho
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
   useEffect(() => {
     const token = localStorage.getItem('token') || 
                   document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
