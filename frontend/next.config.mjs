@@ -18,7 +18,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://sheduled-8umy.onrender.com/api/:path*',
+        destination: 'http://72.60.111.193:5000/api/:path*',
       },
     ];
   }

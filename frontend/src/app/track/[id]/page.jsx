@@ -248,7 +248,7 @@ export default function TrackOrderPage() {
       try {
         setLoading(true);
         setError('');
-        const res = await fetch(`https://sheduled-8umy.onrender.com/api/orders/track/${id}`);
+        const res = await fetch(`http://72.60.111.193:5000/api/orders/track/${id}`);
         
         if (!res.ok) {
           const errorData = await res.json();

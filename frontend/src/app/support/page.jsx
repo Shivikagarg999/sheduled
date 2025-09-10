@@ -26,7 +26,7 @@ export default function Support() {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('https://sheduled-8umy.onrender.com/api/support', {
+      const response = await fetch('http://72.60.111.193:5000/api/support', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

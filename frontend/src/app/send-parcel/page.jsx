@@ -382,7 +382,7 @@ export default function SendParcel() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('https://sheduled-8umy.onrender.com/api/orders/create-order', {
+      const response = await fetch('http://72.60.111.193:5000/api/orders/create-order', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(orderData)
