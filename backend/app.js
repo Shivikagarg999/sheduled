@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -6,57 +5,8 @@ const cors = require('cors');
 const http = require('http');
 const app = express();
 const { Server } = require("socket.io");
-
-const server = http.createServer(app); // Express ko HTTP server banaya
-const io = new Server(server, {
-  cors: {
-    origin: "*", // React ya frontend URL daalna better hai e.g. "http://localhost:3000"
-    methods: ["GET", "POST"]
-  }
-});
-
-const userMap = new Map();
-
-// Jab client connect karega
-io.on("connection", (socket) => {
-  console.log("✅ User connected:", socket.id);
-
-  // Client se event listen
-  socket.on("join", (data) => {
-    console.log("📩 Data received:", data);
-    if (data?.userId) {
-      userMap.set(data.userId, socket.id);
-      console.log(`📝 User ${data.userId} mapped to socket ${socket.id}`);
-    }
-     const targetSocketId = userMap.get("1234");
-    if (targetSocketId) {
-      io.to(targetSocketId).emit("message", {
-        from: socket.id,
-        latitude:79908,
-        longitude:90909
-      });[]
-    }
-  });
-  // baad me use krenge
-    socket.on("sendToUser", ({ targetUserId, message }) => {
-    const targetSocketId = userMap.get(1234);
-    if (targetSocketId) {
-      io.to(targetSocketId).emit("message", {
-        from: socket.id,
-        message,
-      });
-      console.log(`📤 Message sent to ${targetUserId}`);
-    } else {
-      console.log(`⚠️ User ${targetUserId} not connected`);
-    }
-  });
-  // Disconnect event
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-  });
-});
-
-// Import routes
+const Order = require("./models/order");
+// ------------------- Routes -------------------
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -68,8 +18,112 @@ const adminAuthRoutes = require('./routes/admin/auth');
 const adminUserRoutes = require('./routes/admin/user');
 const adminOrderRoutes = require('./routes/admin/order');
 const adminDriverRoutes = require('./routes/admin/driver');
+const adminDashboardRoutes= require('./routes/admin/dashboard');
+const adminPayoutRoutes = require('./routes/admin/payout');
 
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
+const userMap = new Map();
+const driverMap = new Map();
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("join", (data) => {
+    console.log("Data received in join:", data);
+    if (data?.userId) {
+      userMap.set(data.userId, socket.id);
+      console.log(`User ${data.userId} mapped to socket ${socket.id}`);
+    }
+  });
+
+  socket.on("driverjoin", (data) => {
+    console.log("Driver joined:", data);
+    if (data?.userId) {
+      driverMap.set(data.userId, socket.id);
+      console.log(`Driver ${data.userId} mapped to socket ${socket.id}`);
+    }
+  });
+
+  socket.on("tracknum", async (data) => {
+    try {
+      console.log("Tracking request:", data);
+      const trackingNumber = data.trackingnum;
+      const driverId = data.driverId;
+
+      if (!trackingNumber || !driverId) {
+        socket.emit("tracknum-response", { error: "Missing tracking number or driver ID" });
+        return;
+      }
+
+      const order = await Order.findOne({ trackingNumber })
+        .populate("driver", "_id name phone vehicleNumber");
+
+      if (!order) {
+        socket.emit("tracknum-response", { error: "Order not found" });
+        return;
+      }
+
+      console.log("Driver found:", order.driver?._id);
+      const driverSocketId = driverMap.get(order.driver?._id.toString());
+
+      if (driverSocketId) {
+        console.log(`Sending sendLocation event to driver ${order.driver._id}`);
+
+        io.to(driverSocketId).emit("sendLocation", { driverId, trackingNumber });
+      } else {
+        console.warn(`Driver ${order.driver._id} not connected`);
+        socket.emit("tracknum-response", { error: "Driver not connected" });
+      }
+    } catch (err) {
+      console.error("Error fetching order:", err);
+      socket.emit("tracknum-response", { error: "Server error" });
+    }
+  });
+
+socket.on("myLocation", (data) => {
+  console.log("Driver's location received:", data);
+  const { driverId, trackingNumber, location } = data;
+  
+  if (!driverId ||  !location) {
+    console.warn("Invalid location data received:", data);
+    return;
+  }
+  
+  userMap.forEach((userSocketId, userId) => {
+    console.log(` Broadcasting location to user ${userId}`);
+    io.to(userSocketId).emit("driverdata", {
+      trackingNumber,
+      driverId,
+      location,
+    });
+  });
+});
+
+  socket.on("disconnect", () => {
+    userMap.forEach((value, key) => {
+      if (value === socket.id) {
+        userMap.delete(key);
+        console.log(`🗑️ User ${key} disconnected and removed from map`);
+      }
+    });
+
+    driverMap.forEach((value, key) => {
+      if (value === socket.id) {
+        driverMap.delete(key);
+        console.log(`🗑️ Driver ${key} disconnected and removed from map`);
+      }
+    });
+
+    console.log("User disconnected:", socket.id);
+  });
+});
 
 
 // CORS middleware
@@ -79,6 +133,8 @@ app.use((req, res, next) => {
     "https://sheduled.vercel.app",
     "https://www.sheduled.com",
     "https://sheduled-admin-t4nj.vercel.app",
+    "https://www.admin.sheduled.com",
+    "https://admin.sheduled.com"
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -95,7 +151,12 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://sheduled.vercel.app', 'https://www.sheduled.com', "https://sheduled-admin-t4nj.vercel.app"],
+  origin: [
+    'http://localhost:3000',
+    'https://sheduled.vercel.app',
+    'https://www.sheduled.com',
+    "https://sheduled-admin-t4nj.vercel.app"
+  ],
   credentials: true,
 }));
 
@@ -106,8 +167,8 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ Connection error:', err));
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('Connection error:', err));
 
 // Test route
 app.get('/', (req, res) => {
@@ -126,10 +187,10 @@ app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin/user', adminUserRoutes);
 app.use('/api/admin/order', adminOrderRoutes);
 app.use('/api/admin/driver', adminDriverRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/payout', adminPayoutRoutes);
 
-
-// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} with Socket.io`);
+  console.log(`Server running on port ${PORT}`);
 });

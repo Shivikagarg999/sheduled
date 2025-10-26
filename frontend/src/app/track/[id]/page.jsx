@@ -353,7 +353,7 @@ export default function TrackOrderPage() {
             initial="hidden"
             animate="visible"
             variants={fadeIn}
-            className="w-full max-w-md mx-auto p-6 sm:p-8 bg-white rounded-2xl shadow-xl backdrop-blur-sm bg-opacity-90 border border-blue-200 text-center"
+            className="w-full max-w-md mx-auto p-6 sm:p-8 bg-white rounded-2xl shadow-xl 0 border border-blue-200 text-center"
           >
             <h2 className="text-xl sm:text-2xl font-bold mb-4 text-red-600">Error</h2>
             <p className="text-gray-700 mb-6 text-sm sm:text-base">{error}</p>
