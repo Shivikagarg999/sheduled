@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import bgimg from "../../../public/images/bg.png"
 import Nav from '../nav/page';
@@ -14,8 +14,7 @@ export default function Support() {
   const [hasToken, setHasToken] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Check for authentication token
-  useState(() => {
+  useEffect(() => {
     const token = localStorage.getItem('token') || 
                   document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     setHasToken(!!token);
@@ -26,7 +25,7 @@ export default function Support() {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('http://72.60.111.193:5000/api/support', {
+      const response = await fetch('https://api.fast2.in/api/support', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +73,6 @@ export default function Support() {
       className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-white bg-no-repeat bg-cover"
       style={{ backgroundImage: `url(${bgimg.src})` }}
     >
-      {/* Conditionally render Sidebar or Nav */}
       {hasToken ? (
         <Sidebar 
           collapsed={sidebarCollapsed} 
@@ -84,14 +82,13 @@ export default function Support() {
         <Nav />
       )}
 
-      {/* Main content with proper margins when sidebar is present */}
       <div 
         className={`relative z-10 transition-all duration-300 pt-24 ${
           hasToken 
             ? sidebarCollapsed 
-              ? 'ml-16' // Collapsed sidebar width
-              : 'ml-64' // Full sidebar width
-            : 'ml-0' // No sidebar
+              ? 'ml-16' 
+              : 'ml-64'
+            : 'ml-0'
         }`}
       >
         <motion.section 
