@@ -1,49 +1,21 @@
 "use client";
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const PaymentPage = () => {
   const params = useParams();
-  const searchParams = useSearchParams();
   const id = params.id;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processingPayment, setProcessingPayment] = useState(false);
-  const [paymentVerified, setPaymentVerified] = useState(false);
-
-  useEffect(() => {
-    const paymentStatus = searchParams.get('payment_status');
-    const sessionId = searchParams.get('session_id');
-    
-    if (paymentStatus === 'success' && sessionId && id) {
-      verifyPayment(sessionId);
-    } else if (paymentStatus === 'failed') {
-      setError('Payment was cancelled or failed. Please try again.');
-    }
-  }, [searchParams, id]);
-
-  const verifyPayment = async (sessionId) => {
-    try {
-      const res = await axios.get(`http://localhost:5000/api/pay/check-payment?session_id=${sessionId}&order_id=${id}`);
-      if (res.data.paid) {
-        setPaymentVerified(true);
-        setError('Payment successful! Your order is being processed.');
-      } else {
-        setError('Payment verification failed. Please contact support.');
-      }
-    } catch (err) {
-      console.error('Payment verification error:', err);
-      setError('Unable to verify payment status. Please check your orders.');
-    }
-  };
 
   useEffect(() => {
     if (id) {
       setLoading(true);
-      axios.get(`http://localhost:5000/api/orders/order/${id}`)
+      axios.get(`https:// backend.sheduled.com/api/orders/order/${id}`)
         .then(res => {
           setOrder(res.data);
           setError(null);
@@ -59,25 +31,14 @@ const PaymentPage = () => {
   const handlePayment = async () => {
     try {
       setProcessingPayment(true);
-      setError(null);
-      
-      const res = await axios.post('http://localhost:5000/api/pay/payment', { 
-        orderId: id 
-      });
-      
-      if (res.data.redirectUrl) {
-        window.location.href = res.data.redirectUrl;
-      } else {
-        throw new Error('No redirect URL received');
-      }
+      const res = await axios.post('https:// backend.sheduled.com/api/pay/payment', { orderId: id });
+      window.location.href = res.data.redirectUrl;
     } catch (err) {
-      console.error('Payment error:', err);
-      setError(err.response?.data?.error || 'Payment processing failed. Please try again.');
+      console.error(err);
+      setError('Payment processing failed. Please try again.');
       setProcessingPayment(false);
     }
   };
-
-  const shouldShowPaymentButton = order?.paymentMethod === 'card' && !paymentVerified;
 
   if (loading) {
     return (
@@ -102,7 +63,7 @@ const PaymentPage = () => {
     );
   }
 
-  if (error && !paymentVerified) {
+  if (error) {
     return (
       <div className="max-w-2xl mx-auto p-4 md:p-6">
         <div className="bg-white rounded-lg shadow-md overflow-hidden border border-red-300">
@@ -128,36 +89,6 @@ const PaymentPage = () => {
     );
   }
 
-  if (paymentVerified) {
-    return (
-      <div className="max-w-2xl mx-auto p-4 md:p-6">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-green-300">
-          <div className="p-6 border-b border-green-300">
-            <div className="flex items-center gap-2 text-green-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h2 className="text-xl font-semibold">Payment Successful!</h2>
-            </div>
-          </div>
-          <div className="p-6">
-            <p className="text-green-600 mb-4">{error}</p>
-            <div className="space-y-2 mb-6">
-              <p><strong>Order Number:</strong> {order?.trackingNumber}</p>
-              <p><strong>Amount Paid:</strong> AED {order?.amount?.toFixed(2)}</p>
-            </div>
-            <button 
-              onClick={() => window.location.href = '/orders'}
-              className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
-            >
-              View Your Orders
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-6">
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -166,7 +97,7 @@ const PaymentPage = () => {
             Complete Your Payment
           </h1>
           <p className="text-sm text-gray-500">
-            Order #{order?.trackingNumber}
+            Order #{order.trackingNumber}
           </p>
         </div>
         
@@ -177,15 +108,15 @@ const PaymentPage = () => {
               <div>
                 <p className="text-sm text-gray-500">Pickup Location</p>
                 <p className="font-medium">
-                  {order?.pickupBuilding}, {order?.pickupApartment}<br />
-                  {order?.pickupArea}, {order?.pickupEmirate}
+                  {order.pickupBuilding}, {order.pickupApartment}<br />
+                  {order.pickupArea}, {order.pickupEmirate}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Delivery Location</p>
                 <p className="font-medium">
-                  {order?.dropBuilding}, {order?.dropApartment}<br />
-                  {order?.dropArea}, {order?.dropEmirate}
+                  {order.dropBuilding}, {order.dropApartment}<br />
+                  {order.dropArea}, {order.dropEmirate}
                 </p>
               </div>
             </div>
@@ -194,7 +125,7 @@ const PaymentPage = () => {
           <div className="border-t border-gray-200 pt-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Subtotal</span>
-              <span className="font-medium">AED {order?.amount?.toFixed(2)}</span>
+              <span className="font-medium">AED {order.amount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
               <span className="text-gray-600">Service Fee</span>
@@ -202,7 +133,7 @@ const PaymentPage = () => {
             </div>
             <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
               <span className="text-lg font-semibold">Total Amount</span>
-              <span className="text-lg font-bold text-blue-600">AED {order?.amount?.toFixed(2)}</span>
+              <span className="text-lg font-bold text-blue-600">AED {order.amount.toFixed(2)}</span>
             </div>
           </div>
 
@@ -210,12 +141,12 @@ const PaymentPage = () => {
             <h3 className="text-lg font-semibold">Payment Method</h3>
             <div className="flex items-center gap-3 p-4 border rounded-lg">
               <div className="flex-1">
-                <p className="font-medium capitalize">{order?.paymentMethod}</p>
+                <p className="font-medium capitalize">{order.paymentMethod}</p>
                 <p className="text-sm text-gray-500">
-                  {order?.paymentMethod === 'card' ? 'Pay with credit/debit card' : 'Pay with cash on delivery'}
+                  {order.paymentMethod === 'card' ? 'Pay with credit/debit card' : 'Pay with cash on delivery'}
                 </p>
               </div>
-              {order?.paymentMethod === 'card' && (
+              {order.paymentMethod === 'card' && (
                 <div className="flex space-x-2">
                   <div className="w-10 h-6 bg-gray-200 rounded-sm"></div>
                   <div className="w-10 h-6 bg-gray-200 rounded-sm"></div>
@@ -224,35 +155,25 @@ const PaymentPage = () => {
             </div>
           </div>
 
-          {shouldShowPaymentButton && (
-            <button
-              onClick={handlePayment}
-              disabled={processingPayment}
-              className={`w-full px-6 py-3 rounded-md text-white font-medium ${
-                processingPayment ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
-              } transition-colors`}
-            >
-              {processingPayment ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing Payment...
-                </span>
-              ) : (
-                `Pay AED ${order?.amount?.toFixed(2)}`
-              )}
-            </button>
-          )}
-
-          {order?.paymentMethod !== 'card' && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-yellow-800 text-sm">
-                For {order?.paymentMethod} payments, our team will contact you shortly to confirm your order.
-              </p>
-            </div>
-          )}
+          <button
+            onClick={handlePayment}
+            disabled={processingPayment}
+            className={`w-full px-6 py-3 rounded-md text-white font-medium ${
+              processingPayment ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+            } transition-colors`}
+          >
+            {processingPayment ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing Payment...
+              </span>
+            ) : (
+              `Pay AED ${order.amount.toFixed(2)}`
+            )}
+          </button>
 
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">

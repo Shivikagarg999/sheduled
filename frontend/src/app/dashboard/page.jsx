@@ -13,25 +13,20 @@ export default function Main() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userName, setUserName] = useState(null);
-  // Add sidebar state management
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  
   const { scrollY } = useScroll();
-  
-  // Cursor blur effect refs
   const blurRef = useRef(null);
   const positionRef = useRef({ x: 0, y: 0 });
   const frameRef = useRef(0);
   const targetPositionRef = useRef({ x: 0, y: 0 });
 
-  // Fetch user from token
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        console.log('Decoded token:', decoded); // Debug log
+        console.log('Decoded token:', decoded); 
         setUserName(decoded.name || decoded.username || decoded.firstName);
       } catch (error) {
         console.error('Error decoding token:', error);

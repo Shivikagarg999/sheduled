@@ -5,88 +5,28 @@ import { motion } from 'framer-motion';
 import bgimg from "../../../public/images/bg.png";
 import Nav from '../nav/page';
 import Sidebar from '../dashboard/sidebar/page';
-import { io } from "socket.io-client";
 
 export default function EnterTrackingPage() {
   const [trackingId, setTrackingId] = useState('');
   const [hasToken, setHasToken] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [socket, setSocket] = useState(null);
-  const [userId, setUserId] = useState("1346435");
-
-  // driver details
-  const [driverDetails, setDriverDetails] = useState(null);
-  const [driverLocation, setDriverLocation] = useState(null);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  // connect socket
-  useEffect(() => {
-    const newSocket = io("http://72.60.111.193:5000");
-    setSocket(newSocket);
-
-    newSocket.on("connect", () => {
-      console.log("✅ Socket connected:", newSocket.id);
-      newSocket.emit("join", { userId: userId });
-    });
-
-    newSocket.on("message", (data) => {
-      console.log("📩 Message from server:", data);
-    });
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  // check token
   useEffect(() => {
     const token = localStorage.getItem('token') || 
                   document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     setHasToken(!!token);
   }, []);
 
-  // listen for driver location updates
-  useEffect(() => {
-    if (!socket || !trackingId) return;
-
-    const trackNum = trackingId.trim().toUpperCase();
-
-    socket.on(`driverLocation-${trackNum}`, (data) => {
-      console.log("🚚 Driver live location:", data);
-      setDriverLocation({ lat: data.latitude, lng: data.longitude });
-    });
-
-    return () => {
-      socket.off(`driverLocation-${trackNum}`);
-    };
-  }, [socket, trackingId]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!trackingId.trim()) return;
+    if (!trackingId.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     const trackNum = trackingId.trim().toUpperCase();
-    setTrackingId(trackNum);
-
-    if (socket && socket.connected) {
-      // emit tracking number
-      socket.emit("tracknum", { trackingnum: trackNum , userId: userId});
-
-      // receive driver details
-      socket.on("driverdata", (data) => {
-        if (data.error) {
-          console.warn("❌", data.error);
-        } else {
-          console.log("📦 Driver data:", data);
-          setDriverDetails(data.driverDetails);
-        }
-      });
-      console.log("📤 Emitted to server:", trackNum);
-    } else {
-      console.warn("⚠️ Socket not connected!");
-    }
-
+    
+    // Navigate to tracking page
     router.push(`/track/${trackNum}`);
   };
 
@@ -102,78 +42,124 @@ export default function EnterTrackingPage() {
       )}
 
       <div
-        className={`flex items-center justify-center transition-all duration-300 min-h-[100vh] ${
-          hasToken ? (sidebarCollapsed ? 'ml-16' : 'ml-64') : 'ml-0'
+        className={`flex items-center justify-center transition-all duration-300 min-h-[100vh] px-4 ${
+          hasToken ? (sidebarCollapsed ? 'ml-0 lg:ml-16' : 'ml-0 lg:ml-64') : 'ml-0'
         }`}
       >
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="w-full max-w-md mx-auto p-8 bg-transparent border border-blue-200"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md mx-auto p-6 sm:p-8 bg-white rounded-2xl shadow-xl border border-blue-200"
         >
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">
+          <motion.h2 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800"
+          >
             Track Your Order
-          </h2>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center text-gray-600 mb-6 text-sm"
+          >
+            Enter your tracking number to see real-time delivery updates
+          </motion.p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tracking Number
+              </label>
               <input
                 type="text"
-                placeholder="AExxx"
+                placeholder="Enter tracking number (e.g., AEXXXX)"
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-800"
                 required
                 pattern="[A-Za-z0-9]+"
                 title="Please enter a valid tracking number"
+                disabled={isSubmitting}
               />
-            </div>
+              <p className="mt-2 text-xs text-gray-500">
+                Your tracking number can be found in your order confirmation email
+              </p>
+            </motion.div>
 
-            <div className="flex flex-col space-y-4">
-              <button
+            <motion.div 
+              className="flex flex-col space-y-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <motion.button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium px-6 py-3 rounded-lg shadow-md hover:scale-105 transition-transform"
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                Track Order
-              </button>
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </span>
+                ) : (
+                  '🔍 Track Order'
+                )}
+              </motion.button>
 
-              <button
+              <motion.button
                 type="button"
-                className="w-full bg-blue-100 text-blue-800 font-medium px-6 py-3 rounded-lg shadow-md hover:scale-105 transition-transform"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-blue-100 text-blue-800 font-medium px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all"
                 onClick={() => router.push('/send-parcel')}
               >
                 Send a Parcel Instead
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>
-              Need help?{' '}
-              <span className="text-blue-600 cursor-pointer hover:underline">
-                Contact our support
-              </span>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-8 text-center"
+          >
+            <p className="text-sm text-gray-500 mb-3">
+              Need help tracking your order?
             </p>
-          </div>
+            <a 
+              href="/support" 
+              className="text-blue-600 font-medium hover:underline text-sm"
+            >
+              Contact Customer Support →
+            </a>
+          </motion.div>
 
-          {/* Driver Info & Location */}
-          {driverDetails && (
-            <div className="mt-6 p-4 border border-gray-300 rounded-lg bg-white">
-              <h3 className="font-semibold text-lg mb-2">Driver Details</h3>
-              <p><strong>Name:</strong> {driverDetails.name}</p>
-              <p><strong>Phone:</strong> {driverDetails.phone}</p>
-              <p><strong>Vehicle:</strong> {driverDetails.vehicleNumber}</p>
-
-              {driverLocation && (
-                <div className="mt-4 p-2 border border-gray-200 rounded">
-                  <p><strong>Live Location:</strong></p>
-                  <p>Latitude: {driverLocation.lat}</p>
-                  <p>Longitude: {driverLocation.lng}</p>
-                  {/* Replace this with Google Maps / Leaflet for actual map */}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Features */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-8 grid grid-cols-3 gap-4 pt-6 border-t border-gray-200"
+          >
+          </motion.div>
         </motion.div>
       </div>
     </div>

@@ -7,13 +7,16 @@ import { FaChevronDown, FaShippingFast, FaMapMarkerAlt, FaBox, FaSearch, FaClock
 export default function ProfessionalFAQ() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [isClient, setIsClient] = useState(false);
   
-  // Cursor blur effect refs - matching main component
   const blurRef = useRef(null);
   const frameRef = useRef(0);
   const targetPositionRef = useRef({ x: 0, y: 0 });
 
-  // Smooth cursor follower effect - same as main component
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   useEffect(() => {
     const lerp = (start, end, t) => start * (1 - t) + end * t;
     
@@ -37,14 +40,21 @@ export default function ProfessionalFAQ() {
       };
     };
 
-    frameRef.current = requestAnimationFrame(updateBlurPosition);
-    window.addEventListener('mousemove', handleMouseMove);
+    // Only start animation on client side
+    if (isClient) {
+      frameRef.current = requestAnimationFrame(updateBlurPosition);
+      window.addEventListener('mousemove', handleMouseMove);
+    }
 
     return () => {
-      cancelAnimationFrame(frameRef.current);
-      window.removeEventListener('mousemove', handleMouseMove);
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+      if (isClient) {
+        window.removeEventListener('mousemove', handleMouseMove);
+      }
     };
-  }, []);
+  }, [isClient]);
 
   const faqs = [
     {
@@ -92,8 +102,10 @@ export default function ProfessionalFAQ() {
   ];
 
   const navigateTo = (index) => {
-    setDirection(index > activeIndex ? 1 : -1);
-    setActiveIndex(index);
+    if (index >= 0 && index < faqs.length) {
+      setDirection(index > activeIndex ? 1 : -1);
+      setActiveIndex(index);
+    }
   };
 
   const variants = {
@@ -122,26 +134,28 @@ export default function ProfessionalFAQ() {
 
   return (
     <section className="py-20 px-4 relative bg-white overflow-hidden">
-      {/* Same background pattern as main component */}
+      {/* Fixed background - remove dynamic URL logic */}
       <div 
         className="absolute inset-0 z-0"
         style={{ 
-          backgroundImage: `url(${typeof window !== 'undefined' ? '/images/bg.png' : ''})`,
+          backgroundImage: 'url(/images/bg.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }}
       />
 
-      {/* Same cursor blur effect */}
-      <div
-        ref={blurRef}
-        className="fixed w-32 h-32 bg-blue-500/60 rounded-full blur-[80px] pointer-events-none z-0"
-        style={{ 
-          transform: 'translate(-100px, -100px)',
-          willChange: 'transform'
-        }}
-      />
+      {/* Conditionally render blur effect only on client side */}
+      {isClient && (
+        <div
+          ref={blurRef}
+          className="fixed w-32 h-32 bg-blue-500/60 rounded-full blur-[80px] pointer-events-none z-0"
+          style={{ 
+            transform: 'translate(-100px, -100px)',
+            willChange: 'transform'
+          }}
+        />
+      )}
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
@@ -229,15 +243,14 @@ export default function ProfessionalFAQ() {
                   {/* Answer Header */}
                   <div className="flex items-center space-x-4 mb-6">
                     <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
-  {(() => {
-    const ActiveIcon = faqs[activeIndex]?.icon;
-    return ActiveIcon ? <ActiveIcon className="text-2xl text-white" /> : null;
-  })()}
-</div>
-
+                      {(() => {
+                        const ActiveIcon = faqs[activeIndex]?.icon;
+                        return ActiveIcon ? <ActiveIcon className="text-2xl text-white" /> : null;
+                      })()}
+                    </div>
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold text-gray-900">
-                        {faqs[activeIndex].question}
+                        {faqs[activeIndex]?.question || ''}
                       </h3>
                       <div className="flex items-center space-x-2 mt-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -249,7 +262,7 @@ export default function ProfessionalFAQ() {
                   {/* Answer Content */}
                   <div className="flex-1 mb-6">
                     <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line">
-                      {faqs[activeIndex].answer}
+                      {faqs[activeIndex]?.answer || ''}
                     </p>
                   </div>
 
@@ -305,7 +318,6 @@ export default function ProfessionalFAQ() {
               </AnimatePresence>
             </div>
 
-            {/* Quick Action Cards - Matching your CTA style */}
             <div className="grid grid-cols-2 gap-4 mt-6">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(59, 130, 246, 0.3)" }}
