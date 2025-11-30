@@ -3,11 +3,51 @@
 import { FaBox, FaCreditCard, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import Head from 'next/head';
 import Nav from '../nav/page';
-import bg from '../../../public/images/bg.png'
+import bg from '../../../public/images/bg.png';
 import ProfessionalFAQ from '../faqs/page';
 import Footer from '../components/footer/Footer';
 import dashboard from '../../../src/assets/dashboard.jpeg';
+import Link from "next/link";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.3
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+};
+
+const Button = ({ children, variant = 'primary', ...props }) => (
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    className={`
+      px-8 py-4 rounded-lg font-semibold text-lg transition-all
+      ${variant === 'primary' 
+        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+        : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
+      }
+    `}
+    {...props}
+  >
+    {children}
+  </motion.button>
+);
 
 const HeroSection = () => {
   return (
@@ -49,10 +89,11 @@ const HeroSection = () => {
         </div>
 
         <div className="w-full">
-          <img
-            src={dashboard.src}
-            alt="Dashboard"
+          <Image
+            src={dashboard}
+            alt="Delivery dashboard showing parcel tracking interface"
             className="w-full rounded-xl shadow-xl border border-gray-100"
+            placeholder="blur"
           />
         </div>
       </div>
@@ -60,21 +101,34 @@ const HeroSection = () => {
   );
 };
 
+const throttle = (func, limit) => {
+  let inThrottle;
+  return function(...args) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+};
+
 export default function Main() {
   const blurRef = useRef(null);
   const frameRef = useRef(0);
   const targetPositionRef = useRef({ x: 0, y: 0 });
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
   useEffect(() => {
     const lerp = (start, end, t) => start * (1 - t) + end * t;
     
     const updateBlurPosition = () => {
       if (!blurRef.current) return;
       
-      const currentX = parseFloat(blurRef.current.style.transform.split('(')[1]?.split(',')[0]) || 0;
-      const currentY = parseFloat(blurRef.current.style.transform.split(',')[1]?.split(')')[0]) || 0;
+      const style = window.getComputedStyle(blurRef.current);
+      const matrix = new DOMMatrixReadOnly(style.transform);
       
-      const newX = lerp(currentX, targetPositionRef.current.x, 0.1);
-      const newY = lerp(currentY, targetPositionRef.current.y, 0.1);
+      const newX = lerp(matrix.m41, targetPositionRef.current.x, 0.1);
+      const newY = lerp(matrix.m42, targetPositionRef.current.y, 0.1);
       
       blurRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
       frameRef.current = requestAnimationFrame(updateBlurPosition);
@@ -87,37 +141,25 @@ export default function Main() {
       };
     };
 
+    const throttledMouseMove = throttle(handleMouseMove, 16);
+    
     frameRef.current = requestAnimationFrame(updateBlurPosition);
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', throttledMouseMove);
 
     return () => {
       cancelAnimationFrame(frameRef.current);
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', throttledMouseMove);
     };
   }, []);
 
-  const fadeIn = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" }
-    }
-  };
-
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen w-full overflow-x-hidden relative bg-white">
+      <Head>
+        <title>Fast Delivery Service | End-to-End Parcel Delivery</title>
+        <meta name="description" content="Simplify parcel deliveries with our reliable doorstep pickup and delivery service. Track shipments in real-time and grow your business stress-free." />
+        <meta name="keywords" content="delivery, parcel, logistics, shipping, courier" />
+      </Head>
+
       <div 
         className="absolute inset-0"
         style={{ 
@@ -143,11 +185,19 @@ export default function Main() {
         <motion.section 
           initial="hidden"
           animate="visible"
-          variants={staggerContainer}
+          variants={containerVariants}
           className="w-full pt-32 pb-20 px-4 text-center relative"
+          aria-labelledby="main-heading"
         >
+          {!imagesLoaded && (
+            <div className="flex justify-center items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
           <motion.h1 
-            variants={fadeIn}
+            variants={itemVariants}
+            id="main-heading"
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mt-8 mb-6 leading-tight max-w-5xl mx-auto"
           >
             No Warehouses. No Dark Stores.<br />
@@ -156,35 +206,33 @@ export default function Main() {
           </motion.h1>
 
           <motion.p 
-            variants={fadeIn}
+            variants={itemVariants}
             className="text-gray-600 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed"
           >
             We're redefining delivery by eliminating the clutter — no warehouses, no dark stores, no last-mile chaos. Our end-to-end platform connects businesses directly to customers, replacing outdated logistics with a smarter, faster, and more efficient 24 hrs delivery.
           </motion.p>
 
           <motion.div 
-            variants={fadeIn}
+            variants={itemVariants}
             className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20"
           >
-            <motion.button 
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(59, 130, 246, 0.3)" }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg shadow-lg font-semibold text-lg"
-            >
-              Send Parcel
-            </motion.button>
-
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-8 py-4 rounded-lg shadow-md font-semibold text-lg border border-blue-200"
-            >
-              Sign Up
-            </motion.button>
+            <Link href="/send-parcel">
+              <Button 
+                variant="primary"
+                whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(59, 130, 246, 0.3)" }}
+              >
+                Send Parcel
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button variant="secondary">
+                Sign Up
+              </Button>
+            </Link>
           </motion.div>
 
           <motion.div 
-            variants={fadeIn}
+            variants={itemVariants}
             className="max-w-5xl mx-auto mt-24"
           >
             <div className="grid md:grid-cols-3 gap-6 relative">
@@ -298,13 +346,12 @@ export default function Main() {
             </h1>
 
             <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 rounded-md bg-[#2d0c62] text-white font-medium hover:bg-[#3e1386] transition"
+              <Button 
+                variant="primary"
+                className="bg-[#2d0c62] hover:bg-[#3e1386] text-white"
               >
                 Get Started Today
-              </motion.button>
+              </Button>
 
               <motion.button 
                 whileHover={{ scale: 1.05 }}
