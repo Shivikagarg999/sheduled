@@ -31,7 +31,7 @@ function SuccessContent() {
   const fetchOrderDetails = async (orderId) => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://72.60.111.193:5000/api/orders/order/${orderId}`);
+      const response = await axios.get(`http://backend.sheduled.com/api/orders/order/${orderId}`);
       setTrackingNumber(response.data.trackingNumber);
     } catch (err) {
       console.error('Error fetching order details:', err);

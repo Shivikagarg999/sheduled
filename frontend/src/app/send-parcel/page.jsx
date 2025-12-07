@@ -382,7 +382,7 @@ export default function SendParcel() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('https:// backend.sheduled.com/api/orders/create-order', {
+      const response = await fetch('https://backend.sheduled.com/api/orders/create-order', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(orderData)

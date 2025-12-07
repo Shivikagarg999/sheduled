@@ -15,7 +15,7 @@ const PaymentPage = () => {
   useEffect(() => {
     if (id) {
       setLoading(true);
-      axios.get(`https:// backend.sheduled.com/api/orders/order/${id}`)
+      axios.get(`https://backend.sheduled.com/api/orders/order/${id}`)
         .then(res => {
           setOrder(res.data);
           setError(null);
