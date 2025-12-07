@@ -1,122 +1,35 @@
 "use client"
 
-import { FaBox, FaCreditCard, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
+import { FaGlobe, FaChevronDown } from 'react-icons/fa';
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Head from 'next/head';
+import Link from 'next/link';
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
+import bgimg from "../../../public/images/bg.png"
+import cent from "../../../src/assets/centt.jpeg"
 import Nav from '../nav/page';
-import bg from '../../../public/images/bg.png';
-import ProfessionalFAQ from '../faqs/page';
-import Footer from '../components/footer/Footer';
-import dashboard from '../../../src/assets/dashboard.jpeg';
-import Link from "next/link";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-      delayChildren: 0.3
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
-};
-
-const Button = ({ children, variant = 'primary', ...props }) => (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    className={`
-      px-8 py-4 rounded-lg font-semibold text-lg transition-all
-      ${variant === 'primary' 
-        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-        : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
-      }
-    `}
-    {...props}
-  >
-    {children}
-  </motion.button>
-);
-
-const HeroSection = () => {
-  return (
-    <section className="w-full bg-[#f7f8ff] py-20 px-6 md:px-16">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight text-[#2A2A42] mb-6">
-            Simplify parcel deliveries with everything in one place
-          </h1>
-
-          <div className="space-y-6">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mt-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              </div>
-              <p className="text-lg text-gray-700">
-                Enjoy peace of mind with our reliable doorstep pickup and delivery.
-              </p>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mt-1">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              </div>
-              <p className="text-lg text-gray-700">
-                We pick, pack, and deliver your parcels quickly and safely.
-              </p>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mt-1">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              </div>
-              <p className="text-lg text-gray-700">
-                Track every shipment in real-time and grow your business stress-free.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full">
-          <Image
-            src={dashboard}
-            alt="Delivery dashboard showing parcel tracking interface"
-            className="w-full rounded-xl shadow-xl border border-gray-100"
-            placeholder="blur"
-          />
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const throttle = (func, limit) => {
-  let inThrottle;
-  return function(...args) {
-    if (!inThrottle) {
-      func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-};
+import Sidebar from '../dashboard/sidebar/page';
 
 export default function Main() {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { scrollY } = useScroll();
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token') || 
+                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    setHasToken(!!token);
+  }, []);
+
   const blurRef = useRef(null);
+  const positionRef = useRef({ x: 0, y: 0 });
   const frameRef = useRef(0);
   const targetPositionRef = useRef({ x: 0, y: 0 });
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setScrolled(latest > 10);
+  });
 
   useEffect(() => {
     const lerp = (start, end, t) => start * (1 - t) + end * t;
@@ -124,11 +37,11 @@ export default function Main() {
     const updateBlurPosition = () => {
       if (!blurRef.current) return;
       
-      const style = window.getComputedStyle(blurRef.current);
-      const matrix = new DOMMatrixReadOnly(style.transform);
+      const currentX = parseFloat(blurRef.current.style.transform.split('(')[1]?.split(',')[0]) || 0;
+      const currentY = parseFloat(blurRef.current.style.transform.split(',')[1]?.split(')')[0]) || 0;
       
-      const newX = lerp(matrix.m41, targetPositionRef.current.x, 0.1);
-      const newY = lerp(matrix.m42, targetPositionRef.current.y, 0.1);
+      const newX = lerp(currentX, targetPositionRef.current.x, 0.1);
+      const newY = lerp(currentY, targetPositionRef.current.y, 0.1);
       
       blurRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
       frameRef.current = requestAnimationFrame(updateBlurPosition);
@@ -141,37 +54,89 @@ export default function Main() {
       };
     };
 
-    const throttledMouseMove = throttle(handleMouseMove, 16);
-    
     frameRef.current = requestAnimationFrame(updateBlurPosition);
-    window.addEventListener('mousemove', throttledMouseMove);
+    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       cancelAnimationFrame(frameRef.current);
-      window.removeEventListener('mousemove', throttledMouseMove);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const navVariants = {
+    hidden: { y: -20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        damping: 10,
+        stiffness: 100
+      }
+    }
+  };
+
+  const menuItemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: (i) => ({
+      y: 0,
+      opacity: 1,
+      transition: {
+        delay: i * 0.1,
+        type: "spring",
+        stiffness: 100
+      }
+    })
+  };
+
+  const buttonHover = {
+    scale: 1.05,
+    transition: { type: "spring", stiffness: 400, damping: 10 }
+  };
+
+  const buttonTap = {
+    scale: 0.95
+  };
+
+  const fadeIn = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen w-full overflow-x-hidden relative bg-white">
-      <Head>
-        <title>Fast Delivery Service | End-to-End Parcel Delivery</title>
-        <meta name="description" content="Simplify parcel deliveries with our reliable doorstep pickup and delivery service. Track shipments in real-time and grow your business stress-free." />
-        <meta name="keywords" content="delivery, parcel, logistics, shipping, courier" />
-      </Head>
+    <div
+      className="min-h-[100vh] w-full overflow-x-hidden relative bg-center bg-white bg-no-repeat bg-cover"
+      style={{ backgroundImage: `url(${bgimg.src})` }}
+    >
+      {/* Conditionally render Sidebar or Nav with proper props */}
+      {hasToken ? (
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          setCollapsed={setSidebarCollapsed} 
+        />
+      ) : (
+        <Nav />
+      )}
 
-      <div 
-        className="absolute inset-0"
-        style={{ 
-          backgroundImage: `url(${bg.src})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      />
-
-      <Nav />
-
+      {/* Smooth blue blur cursor effect */}
       <div
         ref={blurRef}
         className="fixed w-32 h-32 bg-blue-500/60 rounded-full blur-[80px] pointer-events-none z-0"
@@ -181,191 +146,156 @@ export default function Main() {
         }}
       />
 
-      <div className="relative z-10">
+      {/* Main content with proper margins when sidebar is present */}
+      <div 
+        className={`relative z-10 transition-all duration-300 ${
+          hasToken 
+            ? sidebarCollapsed 
+              ? 'ml-16' // Collapsed sidebar width
+              : 'ml-64' // Full sidebar width
+            : 'ml-0' // No sidebar
+        }`}
+      >
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 200 }}
+              className="fixed top-24 left-4 right-4 mx-auto max-w-7xl bg-white rounded-xl shadow-lg z-40 border-2 border-blue-300 px-6 py-4 backdrop-blur-sm bg-opacity-90"
+            >
+              <motion.ul 
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col space-y-4 text-gray-700 font-medium"
+              >
+                {['About', 'Send Parcel', 'Track Order'].map((item, i) => (
+                  <motion.li 
+                    key={item}
+                    custom={i}
+                    variants={menuItemVariants}
+                    whileHover={{ x: 5 }}
+                    className="cursor-pointer hover:text-blue-600 transition-colors py-2 border-b border-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    {item}
+                  </motion.li>
+                ))}
+              </motion.ul>
+
+              <motion.div 
+                variants={fadeIn}
+                className="mt-4 pt-4 border-t border-gray-200 flex flex-col space-y-3"
+              >
+                <motion.div 
+                  whileHover={buttonHover}
+                  whileTap={buttonTap}
+                  className="flex items-center justify-center space-x-1 border border-gray-200 rounded-full px-3 py-2 text-sm text-gray-700 cursor-pointer"
+                >
+                  <FaGlobe className="text-blue-600" />
+                  <span>English (EN)</span>
+                  <FaChevronDown className="text-xs text-gray-400" />
+                </motion.div>
+
+                <motion.button 
+                  whileHover={buttonHover}
+                  whileTap={buttonTap}
+                  className="w-full text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-full hover:bg-blue-50"
+                >
+                  Log in
+                </motion.button>
+
+                <motion.button 
+                  whileHover={{ 
+                    scale: 1.02,
+                    background: "linear-gradient(to right, #3b82f6, #2563eb)"
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2.5 rounded-full shadow-md"
+                >
+                  Get Started
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.section 
           initial="hidden"
           animate="visible"
-          variants={containerVariants}
-          className="w-full pt-32 pb-20 px-4 text-center relative"
-          aria-labelledby="main-heading"
+          variants={staggerContainer}
+          className="w-full py-36 px-4 text-center relative z-10"
         >
-          {!imagesLoaded && (
-            <div className="flex justify-center items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          )}
-
-          <motion.h1 
-            variants={itemVariants}
-            id="main-heading"
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mt-8 mb-6 leading-tight max-w-5xl mx-auto"
+          {/* Top text */}
+          <motion.p 
+            variants={fadeIn}
+            className="text-sm text-blue-600 font-semibold tracking-wide uppercase"
           >
-            No Warehouses. No Dark Stores.<br />
-            <span className="text-blue-600">No Last Mile Headaches.</span><br />
-            Just True End-to-End Delivery.
+            Built to Simplify Your Shipping
+          </motion.p>
+
+          {/* Main headline */}
+          <motion.h1 
+            variants={fadeIn}
+            className="text-4xl md:text-5xl text-black mt-2 mb-4"
+          >
+            No Warehouses. No Dark Stores. No Last Mile Headaches. Just True End-to-End Delivery.
           </motion.h1>
 
+          {/* Description */}
           <motion.p 
-            variants={itemVariants}
-            className="text-gray-600 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed"
+            variants={fadeIn}
+            className="text-gray-500 max-w-2xl mx-auto mb-8 text-sm md:text-base"
           >
             We're redefining delivery by eliminating the clutter — no warehouses, no dark stores, no last-mile chaos. Our end-to-end platform connects businesses directly to customers, replacing outdated logistics with a smarter, faster, and more efficient 24 hrs delivery.
           </motion.p>
 
           <motion.div 
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20"
+            variants={fadeIn}
+            className="flex justify-center items-center gap-4 mb-12"
           >
             <Link href="/send-parcel">
-              <Button 
-                variant="primary"
-                whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(59, 130, 246, 0.3)" }}
+              <motion.button 
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 10px 20px rgba(59, 130, 246, 0.3)"
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-md shadow-md font-medium"
               >
                 Send Parcel
-              </Button>
+              </motion.button>
             </Link>
-            <Link href="/signup">
-              <Button variant="secondary">
-                Sign Up
-              </Button>
-            </Link>
+
           </motion.div>
 
+          {/* Image Card */}
           <motion.div 
-            variants={itemVariants}
-            className="max-w-5xl mx-auto mt-24"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, type: "spring" }}
+            className="w-full flex justify-center"
           >
-            <div className="grid md:grid-cols-3 gap-6 relative">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="relative"
-              >
-                <div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300">
-                  <div className="absolute -top-4 left-8 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
-                    1
-                  </div>
-                  
-                  <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center mb-4 mt-2">
-                    <FaBox className="text-3xl text-blue-600" />
-                  </div>
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Send Parcel Details
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Enter pickup and delivery addresses with package information
-                  </p>
-                </div>
-
-                <div className="hidden md:block absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
-                  <FaArrowRight className="text-2xl text-blue-300" />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+            <motion.div 
+              whileHover={{ 
+                scale: 1.01,
+                boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)"
+              }}
+            >
+              <motion.img
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="relative"
-              >
-                <div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300">
-                  <div className="absolute -top-4 left-8 w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
-                    2
-                  </div>
-                  
-                  <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center mb-4 mt-2">
-                    <FaCreditCard className="text-3xl text-purple-600" />
-                  </div>
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Make Payment
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Secure payment with multiple options available
-                  </p>
-                </div>
-
-                <div className="hidden md:block absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
-                  <FaArrowRight className="text-2xl text-blue-300" />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                className="relative"
-              >
-                <div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300">
-                  <div className="absolute -top-4 left-8 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
-                    3
-                  </div>
-                  
-                  <div className="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4 mt-2">
-                    <FaCheckCircle className="text-3xl text-green-600" />
-                  </div>
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Parcel Booked
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Get instant confirmation and real-time tracking
-                  </p>
-                </div>
-              </motion.div>
-            </div>
+                src={cent.src}
+                alt="Tracking App UI"
+                className="rounded-2xl w-full h-auto max-w-4xl"
+              />
+            </motion.div>
           </motion.div>
         </motion.section>
-
-        <HeroSection />
-
-        <section className="relative w-full bg-[#1F3A93] flex items-center justify-center overflow-hidden py-20">
-          <div className="absolute right-0 bottom-0 transform translate-x-1/3 translate-y-1/3 opacity-90">
-            <div className="grid grid-cols-2 gap-3">
-              {Array(4)
-                .fill(0)
-                .map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-24 h-24 bg-[#FFB84C] rotate-45 rounded-md"
-                  ></div>
-                ))}
-            </div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center px-4"
-          >
-            <h1 className="text-4xl md:text-5xl font-semibold text-[#C7E8FF] mb-10">
-              Power Your Deliveries With Fast, Reliable Logistics
-            </h1>
-
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <Button 
-                variant="primary"
-                className="bg-[#2d0c62] hover:bg-[#3e1386] text-white"
-              >
-                Get Started Today
-              </Button>
-
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 rounded-md border border-[#2d0c62] text-white font-medium hover:bg-[#2d0c62] hover:text-white transition"
-              >
-                Book a Pickup
-              </motion.button>
-            </div>
-          </motion.div>
-        </section>
-
-        <ProfessionalFAQ/>
-        <Footer/>
       </div>
     </div>
   );
