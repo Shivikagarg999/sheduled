@@ -31,7 +31,7 @@ const PaymentPage = () => {
   const handlePayment = async () => {
     try {
       setProcessingPayment(true);
-      const res = await axios.post('https:// backend.sheduled.com/api/pay/payment', { orderId: id });
+      const res = await axios.post('https://backend.sheduled.com/api/pay/payment', { orderId: id });
       window.location.href = res.data.redirectUrl;
     } catch (err) {
       console.error(err);
